@@ -180,9 +180,6 @@ class Resolver
 
 }
 
-if (PHP_SAPI !== 'cli')
-    throw new RuntimeException(__FILE__. ' is a CLI-only script');
-
 class ResolverIO
 {
     protected $resolver = null;
@@ -331,8 +328,12 @@ class ResolverIO
     }
 }
 
-$io = new ResolverIO();
+//Only allow CLI runtime
+if (PHP_SAPI !== 'cli')
+    throw new RuntimeException(__FILE__. ' is a CLI-only script');
 
-echo $io->resolveConflicts($argv)
-    ->getOutput();
+$io = new ResolverIO();//create our accessor instance
+
+echo $io->resolveConflicts($argv)//pas cli arguments
+    ->getOutput();//get output table, and pass to echo
 
