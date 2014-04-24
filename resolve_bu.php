@@ -3,7 +3,6 @@ class Resolver
 {
 
     const MERGE_MATCH = '/\<{3,}\s*HEAD[^\n]*((\n|.)*?)={4,}((.|\n)+?)>{3,}[^\n]*/mi';
-    const MERGE_MATCH_OLD = '/\<{3,}\s*HEAD[^\n]*\n((\n|.)*?)\n={4,}\n((.|\n)+?)\n>{3,}\s*[^\n]*?/mi';
 
     const MODE_REBASE = 'Unmerged paths:';
 
@@ -121,7 +120,8 @@ class Resolver
                         substr($path, $len)
                     );
                     $path = trim($path);
-                    if (substr($path, -4) === '.php')
+                    $ext = substr($path, -4);
+                    if ($ext === '.php' || $ext === '.xml')
                         $this->paths[] = $path;
                 } while(($path = strstr($out[++$i], self::RESOLVE_BOTH)) !== false || ($path = strstr($out[$i], self::RESOLVE_ADDED)) !== false);
             }

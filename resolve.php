@@ -28,6 +28,11 @@ class Resolver
     protected $addMethod = self::DONT_AUTO_ADD;
     protected $paths = array();
 
+    /**
+     * Constructor... obviously
+     * @param array (assoc, uses keys to "guess" setters)
+     * @return Resolver
+     **/
     public function __construct(array $params)
     {
         foreach ($params as $k => $v)
@@ -38,6 +43,12 @@ class Resolver
         }
     }
 
+    /**
+     * Main method. Process given paths according to specified mode
+     * @param int $addMode = null Use class constants
+     * @param array $files = null Array of paths
+     * @return array
+     **/
     public function resolveConflicts($addMode = null, array $files = null)
     {
         if ($addMode && is_array($addMode))
@@ -61,23 +72,52 @@ class Resolver
         return $this->getResult($add);
     }
 
+    /**
+     * checks given files for syntax errors, uses exec('php -l') to do so
+     * @param array $files
+     * @return array
+     **/
     protected function lintFiles(array $files)
     {
         foreach ($files as $f => $exists)
         {
-            if ($exists)
+            switch (substr($f, -4))
             {
-                exec('php -l '.$f, $out, $status);
-                $out = $status != 0 ? 'ERROR' : implode('', $out);
-                if (strstr($out,'No syntax errors detected') === false)
-                    $files[$f] = 'Syntax error: '.$out;
-                else
-                    $files[$f] = 'Resolved - No syntax errors!';
+                case '.php':
+                    if ($exists)
+                    {
+                        exec('php -l '.$f, $out, $status);
+                        $out = $status != 0 ? 'ERROR' : implode('', $out);
+                        if (strstr($out,'No syntax errors detected') === false)
+                            $files[$f] = 'Syntax error: '.$out;
+                        else
+                            $files[$f] = 'Resolved - No syntax errors!';
+                    }
+                    break;
+                case '.xml':
+                    $dom = new DOMDocument;
+                    if ($dom->load($f))
+                    {
+                        if ($dom->validate())
+                            $files[$f] = 'DOM was parsed and validated';
+                        else
+                            $files[$f] = 'DOM was parsed, but DTD is either missing or markup does not conform';
+                    }
+                    else
+                    {
+                        $files[$f] = 'Syntax error: DOM cannot be parsed, possible invalid markup';
+                    }
+                break;
             }
         }
         return $files;
     }
 
+    /**
+     * create assoc array, ready for ResolverIO rendering
+     * @param array $res
+     * @return array
+     */
     protected function getResult(array $res)
     {
         $out = array();
@@ -88,11 +128,17 @@ class Resolver
         return $out;
     }
 
+    /**
+     * Adds resolved conflict through git add command
+     * provided the file was processed (and lint was OK) successfully
+     * @param array $resolved
+     * @return array
+     */
     protected function doAddResolved(array $resolved)
     {
         foreach ($resolved as $f => $status)
         {
-            if ($status !== false)
+            if ($status !== false && strstr($status, 'Syntax error:') === false)
             {
                 exec('git add '.$f, $out, $s);
                 $resolved[$f] = $s != 0 ? 'Error: '.implode(PHP_EOL, $out) : 'Added!';
@@ -101,19 +147,27 @@ class Resolver
         return $resolved;
     }
 
+
+    /**
+     * exec call to git status command, reads output, gets the
+     * "Both modified" and "both added" paths
+     * attempts to resolve the conflicts
+     * @return array
+     * @throw RuntimeException
+     **/
     protected function getPathsFromGit()
     {
         exec('git status', $out, $status);
         if ($status != 0)
             throw new RuntimeException('Could not get git status');
         $this->paths = array();
+        $len = strlen(self::RESOLVE_BOTH);//assign once, use in loop
         for ($i=0,$j=count($out);$i<$j;++$i)
         {
             if (strstr($out[$i], 'Unmerged paths:'))
             {
                 while(($path = strstr($out[$i], self::RESOLVE_BOTH)) === false && ($path = strstr($out[$i], self::RESOLVE_ADDED)) === false && $i < $j)
                     ++$i;
-                $len = strlen(self::RESOLVE_BOTH);
                 do {
                     $path = trim(
                         substr($path, $len)
@@ -130,6 +184,11 @@ class Resolver
         return $this->paths;
     }
 
+    /**
+     * Checks if files exist, rewrites the file using preg_replace
+     * @param string $file
+     * @return bool
+     */
     protected function resolveRebase($file)
     {
         if (!file_exists($file))
@@ -147,12 +206,23 @@ class Resolver
         return true;
     }
 
+    /**
+     * setter for $paths property
+     * @param array $paths <string>
+     * @return Resolver
+     */
     public function setPaths(array $paths)
     {
         $this->paths = $paths;
         return $this;
     }
 
+    /**
+     * Setter for mode property (preserve old/new part of diff conflict?)
+     * @param int $mode (use constants)
+     * @return Resolver
+     * @throw InvalidArgumentException
+     */
     public function setPreserve($mode = self::PRESERVE_OLD)
     {
         if ($mode !== self::PRESERVE_OLD && $mode !== self::PRESERVE_NEW)
@@ -164,6 +234,12 @@ class Resolver
         return $this;
     }
 
+    /**
+     * Setter for add-mode (don't add, quick 'n dirty, lint-check with/without adding)
+     * @param int $mode (use class constants)
+     * @return Resolver
+     * @throw InvalidArgumentException
+     */
     public function setAddMode($mode)
     {
         $mode = (int) $mode;
@@ -182,8 +258,14 @@ class Resolver
 
 class ResolverIO
 {
+    /**
+     * @var Resolver
+     */
     protected $resolver = null;
 
+    /**
+     * @var array
+     */
     protected $arguments = array(
         'paths'     => array(),
         'preserve'  => Resolver::PRESERVE_OLD,
@@ -192,11 +274,22 @@ class ResolverIO
 
     protected $output = null;
 
+    /**
+     * Constructor, obviously...
+     * @param Resolver $r = null (optional)
+     * @return ResolverIO
+     */
     public function __construct(Resolver $r = null)
     {
         $this->resolver = null;
     }
 
+    /**
+     * Accepts array argument, should be passed the CLI $argv array
+     * @param array $args (use $argv => implies $args[0] is ignored!)
+     * @param bool $cli = true
+     * @return ResolverIO
+     */
     public function resolveConflicts(array $args = array(), $cli = true)
     {
         if ($args && $cli)
@@ -208,6 +301,12 @@ class ResolverIO
         return $this;
     }
 
+    /**
+     * Get rendered output (stringified in table)
+     * Default appends EOL char to this string, pass false if not desired
+     * @param bool $appendEOL = true
+     * @return string
+     */
     public function getOutput($appendEOL = true)
     {
         if ($appendEOL === true)
@@ -215,6 +314,11 @@ class ResolverIO
         return $this->output;
     }
 
+    /**
+     * Set default settings, which will be used for Resolver
+     * @param array $defaults
+     * @return ResolverIO
+     */
     public function setDefaults(array $defaults)
     {
         foreach ($this->argumenst as $k => $v)
@@ -225,12 +329,22 @@ class ResolverIO
         return $this;
     }
 
+    /**
+     * create (new) Resolver instance
+     * @param array $params
+     * @return ResolverIO
+     */
     protected function initResolver(array $params)
     {
         $this->resolver = new Resolver($params);
         return $this;
     }
 
+    /**
+     * Lazy-loader for Resolver dependency
+     * uses default arguments, can be set through ResolverIO::setDefaults
+     * @return Resolver
+     */
     public function getResolver()
     {
         if ($this->resolver === null)
@@ -242,6 +356,12 @@ class ResolverIO
         return $this->resolver;
     }
 
+    /**
+     * Extract params/defaults/arguments from passed array (CLI $argv)
+     * the resulting array is an assoc array that can be used to initialize Resovler
+     * @param array $args
+     * @return array $params
+     */
     public function processArguments(array $args)
     {
         $argMap = array(
@@ -282,6 +402,11 @@ class ResolverIO
         return $params;
     }
 
+    /**
+     * Render returned array from Resolve dependency into easy-to-display table
+     * @param array $out (actually, input)
+     * @return string
+     */
     public function renderOutput(array $out)
     {
         $array = array(
