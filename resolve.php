@@ -24,15 +24,31 @@ class Resolver
     const LINT_MODES = 6;
     const ADD_MODES = 12;
 
+    /**
+     * @var string
+     */
     protected $preserve = null;
+
+    /**
+     * @var int
+     */
     protected $addMethod = self::DONT_AUTO_ADD;
+
+    /**
+     * @var array
+     */
     protected $paths = array();
+
+    /**
+     * @var DOMDocument
+     */
+    protected $dom = null;
 
     /**
      * Constructor... obviously
      * @param array (assoc, uses keys to "guess" setters)
      * @return Resolver
-     **/
+     */
     public function __construct(array $params)
     {
         foreach ($params as $k => $v)
@@ -48,7 +64,7 @@ class Resolver
      * @param int $addMode = null Use class constants
      * @param array $files = null Array of paths
      * @return array
-     **/
+     */
     public function resolveConflicts($addMode = null, array $files = null)
     {
         if ($addMode && is_array($addMode))
@@ -76,7 +92,7 @@ class Resolver
      * checks given files for syntax errors, uses exec('php -l') to do so
      * @param array $files
      * @return array
-     **/
+     */
     protected function lintFiles(array $files)
     {
         foreach ($files as $f => $exists)
@@ -95,7 +111,7 @@ class Resolver
                     }
                     break;
                 case '.xml':
-                    $dom = new DOMDocument;
+                    $dom = $this->getDom();
                     if ($dom->load($f))
                     {
                         if ($dom->validate())
@@ -204,6 +220,30 @@ class Resolver
         );
         file_put_contents($file, $replaced);
         return true;
+    }
+
+    /**
+     * Lazy-loading DOMDocument getter
+     * @return DOMDocument
+     */
+    protected function getDOM()
+    {
+        if ($this->dom === null)
+        {
+            $this->setDom(new DOMDocument);
+        }
+        return $this->dom;
+    }
+
+    /**
+     * Setter for the DOMDocument property
+     * @param DOMDocument $dom
+     * @return Resolver
+     */
+    public function setDom(DOMDocument $dom)
+    {
+        $this->dom = $dom;
+        return $this;
     }
 
     /**
