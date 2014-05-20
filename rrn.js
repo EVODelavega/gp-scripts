@@ -56,6 +56,40 @@ var RRMod = (function()
         num = parseInt(base, 10);//use parseInt to avoid octals in case of leading zeroes
         num = ('0000' + (checkBase - (num%checkBase))).substr(-1 * (''+checkBase).length);
         return base.replace(/^(\d{2})(\d{2})(\d{2})(\d{3})/,'$1.$2.$3-$4-' + num);
+    },
+    usSsn = function()
+    {
+        var k,
+            check,
+            bases = [900,100,10000],
+            groups =[
+                (Math.round(Math.random()*1000)+111)%bases[0],
+                (Math.round(Math.random()*100)+1)%bases[1],
+                (Math.round(Math.random()*10000)+1)%bases[2]
+        ];
+        for (k=0;k<groups.length;++k)
+            if (!groups[k])
+                groups[k] = Math.round(Math.random()*bases[k]);
+        while (groups[0] === 666 || groups[0] > 900)
+            groups[0] = (Math.round(Math.random()*1000)+111)%900;
+        if (groups[0] === 987 && groups[1] === 65)
+            while(groups[2] > 4319 && groups[2] < 4330)
+                groups[2] = (Math.round(Math.random()*10000)+1)%10000;
+        //the Woolworth SSN: 078-05-1120
+        if (groups[0] === 78 && groups[1] === 5 && groups[2] === 1120)
+        {
+            k = (Math.round(Math.random()*10))%3;
+            check = groups[k];
+            while (groups[k] === check)
+                groups[k] = Math.round(Math.random()*bases[k]);
+            //small chance, but dirty fix to avoid prohibited SSN's from being generated here.
+            if (groups[k] === 666) groups[k]++;
+            else if (groups[k] === 0) groups[k]++;
+            else if (groups[k] === 65) groups[k]++;
+        }
+        for (k = 0;k<groups.length;++k)
+            groups[k] = ('0000' + groups[k]).substr( k === 2 ? -4 : (k -3));
+        return groups.join('-');
     };
     Object.defineProperties(module, {
         modMax: {
@@ -126,6 +160,10 @@ var RRMod = (function()
                     return rrn(bd2rr(d,s));
                 return bd2rr(d,s);
             },
+            writable: false
+        },
+        generateUSSSN: {
+            value: usSsn,
             writable: false
         }
     });
