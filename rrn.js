@@ -119,7 +119,7 @@ var RRMod = (function()
             },
             get: function()
             {
-                return checkBase
+                return checkBase;
             }
         },
         addValidator: {
