@@ -1,4 +1,13 @@
 #! /usr/bin/env bash
+command -v sponge >/dev/null 2>&1 || {
+    echo >&2 "${0:2:${#0}} requires sponge to run.";
+    echo ""
+    echo "Install:"
+    echo "     Debian-based systems: sudo apt-get install moreutils"
+    echo "     Other: Clone the moreutils repo (git://git.kitenet.net/moreutils)"
+    echo ""
+    exit 1;
+}
 usage() {
     echo "Use: ${0:2:${#0}} -f filename [-p prefix] [-l lines] [-h header]"
     echo ""
@@ -30,7 +39,7 @@ while getopts ":f:p:l:h:" opt; do
             if [[ $OPTARG =~ $numre ]] ; then
                 lines=$OPTARG
             else
-                echo "Invalid value for $opt: $OPTARG";
+                echo "Invalid value for $opt: $OPTARG" >&2
                 usage
                 exit 1;
             fi
