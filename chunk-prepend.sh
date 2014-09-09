@@ -19,7 +19,6 @@ file=''
 pref="c"
 lines=1000
 while getopts ":f:p:l:h:" opt; do
-    echo "$opt => $OPTARG" >&2
     case "${opt}" in
         f)
             file=$OPTARG
