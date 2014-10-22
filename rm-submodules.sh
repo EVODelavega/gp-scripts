@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 submodpath() {
-	SUB_PATH=${0}
+	SUB_PATH=${1}
 	for subdir in $(ls $SUB_PATH)
 	do
 		config="$MOD_ROOT/$SUB_PATH/$subdir/config"
@@ -31,13 +31,13 @@ SUBMODULES=()
 for submod in $(ls $MOD_ROOT)
 do
     TO_ADD+=($submod)
-	submodpath "$MOD_ROOT/$submod"
+	submodpath "$submod"
 done
 
-for module in $SUBMODLUES
+for module in "${SUBMODULES[@]}"
 do
 	echo "removing submodule $module"
-	git rm --cached $module
+	git rm --cached "$module"
 	if [ -f "$module/.git" ] ; then
 		rm "$module/.git"
 	else
@@ -51,7 +51,7 @@ if [ -f .gitmodules ] ; then
 fi
 
 echo "Adding submodules to main repo"
-for add_path in $TO_ADD
+for add_path in "${TO_ADD[@]}"
 do
 	git add "$add_path"
 done
