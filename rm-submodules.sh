@@ -1,4 +1,23 @@
 #!/usr/bin/env bash
+
+######################################
+##         Remove submodules        ##
+##          from a git repo         ##
+##                                  ##
+##  Default: Remove all submodules  ##
+##                                  ##
+##  Pass paths to submodules for    ##
+##   "targetted" removal            ##
+##                                  ##
+##  eg: remove all submodules:      ##
+##     $ ./rm-submodules.sh         ##
+##                                  ##
+##  eg: Remove all submodules       ##
+##      in directory foo/bar        ##
+##    $ ./rm-submodules.sh foo/bar  ##
+##                                  ##
+######################################
+
 submodpath() {
     SUB_PATH=${1}
     for subdir in $(ls "$MOD_ROOT/$SUB_PATH")
@@ -28,11 +47,20 @@ MOD_ROOT=".git/modules"
 TO_ADD=()
 SUBMODULES=()
 
-for submod in $(ls $MOD_ROOT)
-do
-    TO_ADD+=($submod)
-    submodpath "$submod"
-done
+if [ "$#" -eq "0" ] ; then
+    for submod in $(ls $MOD_ROOT)
+    do
+        TO_ADD+=($submod)
+        submodpath "$submod"
+    done
+else
+    # Remove any trailing slashes...
+    for submod in "${@%/}"
+    do
+        TO_ADD+=($submod)
+        submodpath "$submod"
+    done
+fi
 
 for module in "${SUBMODULES[@]}"
 do
