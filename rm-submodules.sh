@@ -20,16 +20,21 @@
 
 submodpath() {
     SUB_PATH=${1}
-    for subdir in $(ls "$MOD_ROOT/$SUB_PATH")
-    do
-        config="$MOD_ROOT/$SUB_PATH/$subdir/config"
-        if [ -f $config ] ; then
-            echo "Found submodule $SUB_PATH/$subdir"
-            SUBMODULES+=("$SUB_PATH/$subdir")
-        else
-            submodpath "$SUB_PATH/$subdir"
-        fi
-    done
+    if [ -f "$MOD_ROOT/$SUB_PATH/config" ] ; then
+        echo "Found submodule $SUB_PATH"
+        SUBMODULES+=("$SUB_PATH")
+    else
+        for subdir in $(ls "$MOD_ROOT/$SUB_PATH")
+        do
+            config="$MOD_ROOT/$SUB_PATH/$subdir/config"
+            if [ -f $config ] ; then
+                echo "Found submodule $SUB_PATH/$subdir"
+                SUBMODULES+=("$SUB_PATH/$subdir")
+            else
+                submodpath "$SUB_PATH/$subdir"
+            fi
+        done
+    fi
 }
 if [ ! -d .git ] ; then
     echo "No .git directory found"
