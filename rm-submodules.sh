@@ -46,7 +46,7 @@ do
 done
 
 if [ -f .gitmodules ] ; then
-    echo "Regmove .gitmodules file"
+    echo "Remove .gitmodules file"
     rm .gitmodules
 fi
 
@@ -54,7 +54,7 @@ echo "Adding submodules to main repo"
 for add_path in "${TO_ADD[@]}"
 do
     echo "Add submodule(s) in path $add_path"
-    git add "$add_path"
+    git add --all "$add_path"
 done
 echo "Done... now commit && push!"
 exit 0
