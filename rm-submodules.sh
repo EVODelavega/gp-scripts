@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 submodpath() {
     SUB_PATH=${1}
-    for subdir in $(ls $SUB_PATH)
+    for subdir in $(ls "$MOD_ROOT/$SUB_PATH")
     do
         config="$MOD_ROOT/$SUB_PATH/$subdir/config"
         if [ -f $config ] ; then
