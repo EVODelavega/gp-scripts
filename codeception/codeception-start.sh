@@ -47,16 +47,20 @@ if [[ $# -eq 0 ]]; then
     echo 'No arguments...'
     exit 1;
 fi
-CHROME_PATH="/full/path/to/chromedriver"
-SELENIUM_PATH="/full/path/to/selenium-server-standalone-X.XX.X.jar"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CHROME_PATH="$DIR/chromedriver"
+SELENIUM_PATH="$DIR/selenium-server-standalone.jar"
 case "$1" in
     start)
-        echo 'Starting test env...'
-        startxvfb $1
+        echo -n 'Root privileges will be required...'
+        sudo echo 'Starting test env...'
+        #startxvfb $1
         startselenium $1
         ;;
     stop)
-        startxvfb $1
+        echo -n 'Root privileges will be required...'
+        sudo echo 'Stopping test env...'
+        #startxvfb $1
         startselenium $1
         exit 0
         ;;
