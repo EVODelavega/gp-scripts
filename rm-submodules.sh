@@ -18,6 +18,7 @@
 ##                                  ##
 ######################################
 
+## Recursively search given path for submodules
 submodpath() {
     SUB_PATH=${1}
     if [ -f "$MOD_ROOT/$SUB_PATH/config" ] ; then
@@ -26,16 +27,17 @@ submodpath() {
     else
         for subdir in $(ls "$MOD_ROOT/$SUB_PATH")
         do
-            config="$MOD_ROOT/$SUB_PATH/$subdir/config"
-            if [ -f $config ] ; then
+            if [ -f "$MOD_ROOT/$SUB_PATH/$subdir/config" ] ; then
                 echo "Found submodule $SUB_PATH/$subdir"
                 SUBMODULES+=("$SUB_PATH/$subdir")
             else
-                submodpath "$SUB_PATH/$subdir"
+                submodpath "$SUB_PATH/$subdir" #recursive call
             fi
         done
     fi
 }
+
+## script needs to run in repo
 if [ ! -d .git ] ; then
     echo "No .git directory found"
     exit 1
@@ -49,6 +51,7 @@ if [ ! -d .git/modules ] ; then
 fi
 
 MOD_ROOT=".git/modules"
+RM_MODULES=true
 TO_ADD=()
 SUBMODULES=()
 
@@ -59,6 +62,7 @@ if [ "$#" -eq "0" ] ; then
         submodpath "$submod"
     done
 else
+    RM_MODULES=false ## .gitmodules file should not be removed!
     # Remove any trailing slashes...
     for submod in "${@%/}"
     do
@@ -77,10 +81,13 @@ do
         echo "No .git ref-file found"
     fi
 done
-
-if [ -f .gitmodules ] ; then
-    echo "Remove .gitmodules file"
-    rm .gitmodules
+if [ "$RM_MODULES" = false ] ; then
+    echo "Update .gitmodules where needed"
+else 
+    if [ -f .gitmodules ] ; then
+        echo "Remove .gitmodules file"
+        rm .gitmodules
+    fi
 fi
 
 echo "Adding submodules to main repo"
