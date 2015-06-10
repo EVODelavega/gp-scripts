@@ -152,6 +152,37 @@ var RRMod = (function()
             },
             writable: false
         },
+        generateRandomBetween: {
+            value: function(min, max, sex)
+            {
+                var date = new Date(),
+                    age,
+                    mod = 12;
+                if (typeof max !== 'number')
+                {
+                    sex = max;
+                    max = 100;
+                }
+                //age -> random between min and max age
+                age = Math.floor(Math.random() * (max - min) + min);
+                if (age === min)
+                    mod = date.getMonth();//not in future months
+                date.setFullYear(date.getFullYear() - age);
+                date.setMonth(Math.round(Math.random()*100)%mod);
+                mod=32;//day modulo
+                if (date.getMonth() === 1)
+                {//feb -> date modulo needs to change
+                    mod -= 2;//29 or 28 days
+                    if (date.getFullYear()%4)
+                    {//if year not divisible by 4, mod needs to be 29 (for 28 days)
+                        --mod;
+                    }
+                }
+                date.setDate(Math.round(Math.random()*100)%mod);
+                return rrn(bd2rr(date, sex));
+            },
+            writable: false
+        },
         generateRR: {
             value: function(d, s, full)
             {
@@ -176,5 +207,17 @@ console.log(RRMod.generateRandom(18));
 console.log(RRMod.generateRR(new Date(), 'f'));
 console.log(RRMod.generateRR(new Date(), 'm', false));
 console.log(RRMod.addValidator('99.01.01-009-??'));
+(function(i)
+{
+    console.log('10 RRNs 21+, male: ');
+    for (i=0;i<10;++i)
+        console.log(RRMod.generateRandom(21, 'm'));
+    console.log('10 RRNs, 21+, female: ');
+    for (i=0;i<10;++i)
+        console.log(RRMod.generateRandom(21, 'f'));
+    console.log('5 RRNs 18+ male: ');
+    for (i=0;i<5;++i)
+        console.log(RRMod.generateRandomBetween(18, 21, 'm'));
+}());
 */
 
