@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
-read -p 'create packidx.log file? [y/N]: ' -n 1 -r
+if [ ! -f packidx.log ]; then
+    echo "Creating packidx.log file"
+    REPLY=y
+else
+    read -p 'create packidx.log file? [y/N]: ' -n 1 -r
+fi
 if [[ $REPLY =~ ^[yY]$ ]]
 then
     git gc
     packfile=$(ls .git/objects/pack/*.idx)
     git verify-pack -v "$packfile" | sort -k 3 -n > packidx.log
 fi
+echo "Choose filter type"
 filterflag="--index-filter"
 read -p 'hard-core rm (slow) instead of default (quicker) index-only filter? [y/N]: ' -n 1 -r
 if [[ $REPLY =~ ^[yY]$ ]]
@@ -38,6 +44,13 @@ for objectref in $(tac packidx.log | grep blob | cut -d " " -f1); do
     read -p 'continue? [Y/n]: ' -n 1 -r
     if [[ $REPLY =~ ^[nN]$ ]]
     then
-        exit 0
+        break
     fi
 done
+echo '' #insert blank line
+read -p 'remove packidx.log? [y/N]: ' -n 1 -r
+if [[ $REPLY =~ ^[yY]$ ]]; then
+    rm packidx.log
+fi
+echo '' #new line
+exit 0
