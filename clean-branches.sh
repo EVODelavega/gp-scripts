@@ -20,11 +20,17 @@ function Full {
     echo 'start from master branch'
     git checkout $mainbranch
     echo "removing all branches, except for branch $mainbranch"
-    for b in $(git branch) ; do if [ ! "$b" = "$mainbranch" ] ; then git branch -D ${b}; fi done
+    for b in $(git branch | cut -c 3-) ; do
+        if [ ! "$b" = "$mainbranch" ] ; then
+            git branch -D ${b};
+        fi
+    done
     echo 'pull latest version'
     git pull --all $remote
     echo 'creating tracking branches for all remote branches'
-    for b in $(git ls-remote --heads $remote  | sed 's?.*refs/heads/??'); do git checkout ${b} && git branch --set-upstream-to="$remote/$b"; done
+    for b in $(git ls-remote --heads $remote  | sed 's?.*refs/heads/??'); do
+        git checkout ${b} && git branch --set-upstream-to="$remote/$b";
+    done
     echo "switching back to $mainbranch"
     git checkout $mainbranch
     echo 'done'
@@ -42,8 +48,10 @@ function FixTracking {
     git checkout $mainbranch
     echo "fetching all remote branches from $remote"
     git fetch $remote --all
-    for b in $(git branch) ; do git checkout $b && git --set-upstream-to="$remote/$b"; done
-    # for b in $(git branch) ; do git checkout $b && git --set-upstream-to=$(echo $b | sed -e 's/^/origin\//'); done
+    for b in $(git branch | cut -c 3-) ; do
+        git checkout $b && git --set-upstream-to="$remote/$b";
+    done
+    # for b in $(git branch | cut -c 3-) ; do git checkout $b && git --set-upstream-to=$(echo $b | sed -e 's/^/origin\//'); done
     git checkout $mainbranch
 }
 
