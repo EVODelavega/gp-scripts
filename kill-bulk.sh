@@ -17,7 +17,7 @@ fi
 for arg; do
     echo "Killing all $arg processes"
     for pid in $(ps -A | grep $1 | awk '{print $1}'); do
-        echo kill -9 "$pid"
+        kill -9 "$pid"
     done
 done
 
