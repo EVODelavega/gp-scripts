@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Pod::Usage;
+use Env qw(HOME);
+use Cwd;
 
 my $filename = 'liquibase.properties';
 
@@ -33,6 +35,17 @@ for my $key (keys %opts) {
 }
 
 close $fh;
+
+print "Check environment variable for LIQUIBASE_HOME\n";
+if (!defined $ENV{LIQUIBASE_HOME}) {
+    #get pwd (of file)
+    my $basePath = cwd();
+    open(my $fh, '>>:encoding(UTF-8)', "$HOME/.bashrc")
+        or die "Failed to append to $HOME/.bashrc: $!\n";
+    print $fh "\nexport LIQUIBASE_HOME='$basePath'\n";
+    close $fh;
+}
+
 print "Done\n";
 
 __END__
