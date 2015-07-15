@@ -8,29 +8,36 @@ use Cwd;
 
 my $filename = 'liquibase.properties';
 
+my $basePath = cwd();
+
 my %opts=(
-    filename    => \$filename,
-    driver      => 'com.mysql.jdbc.Driver',
-    classpath   => './mysql-connector-java-5.1.35-bin.jar',
-    url         => 'jdbc:mysql://127.0.0.1/my_db',
-    username    => 'root',
-    password    => '',
-    help        => 0
+    filename        => \$filename,
+    driver          => 'com.mysql.jdbc.Driver',
+    classpath       => "${basePath}/mysql-connector-java-5.1.35-bin.jar",
+    url             => 'jdbc:mysql://127.0.0.1/my_db',
+    username        => 'root',
+    password        => '',
+    changeLogFile   => 'schema.xml',
+    help            => 0
 );
 
-GetOptions(\%opts, 'filename=s', 'driver=s', 'classpath=s', 'url|server=s', 'username=s', 'password=s', 'help|?')
+GetOptions(\%opts, 'filename=s', 'driver=s', 'classpath=s', 'url|server=s', 'username=s', 'password=s', 'changeLogFile=s', 'help|?')
     or pod2usage(-existval => 1, -verbose => 99);
 
 pod2usage(-exitval => 0, -verbose => 1) if $opts{help};
-
-# GetOptions('filename=s' => \$filename);
 
 open(my $fh, '>:encoding(UTF-8)', $filename)
     or die "Failed to open '$filename': $!\n";
 
 for my $key (keys %opts) {
     if ($key ne 'filename' && $key ne 'help') {
-        print $fh "$key: $opts{$key}\n"
+        if ($key eq 'classpath') {
+            my $baseLen = length $basePath;
+            if (substr($opts{$key}, 0, $baseLen) ne $basePath) {
+                $opts{$key} = "$basePath/$opts{$key}";
+            }
+        }
+        print $fh "$key: $opts{$key}\n";
     }
 }
 
@@ -68,6 +75,7 @@ setup [options] - Generate liquibase properties file
         --url=jdbc:mysql://127.0.0.1/my_db                  : The DB to connect to
         --username=root                                     : user (DB credentials)
         --password=''                                       : password (DB credentials)
+        --changeLogFile=schema.xml                          : Default changelog file
 
 
 =over 8
