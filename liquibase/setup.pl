@@ -63,7 +63,7 @@ setup - Usage
 
 =head1 SYNOPSIS
 
-setup [options] - Generate liquibase properties file
+setup [options] - Generates generic liquibase properties file, with classpath, url, username, password and default changeLogFile set up
 
 =head1 OPTIONS
 
@@ -87,5 +87,15 @@ Enjoy
 =head1 DESCRIPTION
 
 B<this program> will generate the liquibase.properties file with the params given. Default is to create it in the current directory under the liquibase.properties name
+It's recommended you run this script in tandem with the get-liquibase.sh bash script, after which you can easily start using liquibase in your projects by simply running
+the following command:
+
+    $ cp $LIQUIBASE_HOME/liquibase.properties ./
+
+After which, commands like
+
+    $ liquibase generateChangeLog
+
+will generate the changelog file, without those tedious flags
 
 =cut
