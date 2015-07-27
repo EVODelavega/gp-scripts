@@ -64,6 +64,7 @@ if [ $# -gt 0 ] ; then
                 exit 0
                 ;;
             \?)
+                echo "Unknown flag"
                 Help
                 exit 1
                 ;;
