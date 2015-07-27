@@ -9,7 +9,7 @@ filterflag="--index-filter"
 #get current branch
 currentbranch=$(git branch | grep '*' | awk '{print $2}')
 
-function Help {
+Help () {
     echo "Usage $SCRIPT [-svfh][-i value]:"
     echo "     -i [packidx.log]: specify an existing file, containing sorted git verify-pack -v output"
     echo "                       Default is to create or prompt to reuse an existing packidx.log file"
@@ -19,7 +19,7 @@ function Help {
     echo "     -h              : Help. Display this message"
 }
 
-function AfterFilter {
+AfterFilter () {
     if [ "$verbose" = true ] ; then
         echo 'cleaning up .git/refs/original and .git/logs, then gc the git DB'
     fi
@@ -40,9 +40,7 @@ function AfterFilter {
         git push --force
     else
         read -p 'push the rewritten head? [Y/n]: ' -n 1 -r
-        if [[ ! $REPLY =~ ^[nN]$ ]] ; then
-            git push --force
-        fi
+        [[ $REPLY =~ ^[nN]$ ]] || git push --force
     fi
 }
 
