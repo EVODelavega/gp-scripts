@@ -1,6 +1,6 @@
+#!/usr/bin/env php
 <?php
-function r($n)
-{
+function r($n) {
     echo $n . PHP_EOL;
     if ($n == 1)
         return $n;
