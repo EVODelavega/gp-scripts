@@ -13,5 +13,5 @@ sub r {
     }
     return r($n/2);
 }
-print "Basic collatz fun -recursive perl function\n";
+print "Basic collatz fun - recursive perl function\n";
 r(15);
