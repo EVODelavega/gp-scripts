@@ -1,3 +1,5 @@
+//compile: javac java.java
+//run: java -cp $(pwd) Collatz
 class Collatz
 {
     public static void main(String[] args)
