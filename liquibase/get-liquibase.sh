@@ -16,7 +16,7 @@ if [ ! -d liquibase ]; then
     rm liquibase*.tar.gz
     rm mysql-connector*.tar.gz
     # copy config script
-    mv setup.ph liquibase/
+    mv setup.pl liquibase/
     cd liquibase/
     ./setup.pl
     # If setup was successful, procede, else exit with error code
