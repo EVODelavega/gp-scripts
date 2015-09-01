@@ -55,6 +55,7 @@ Update() {
         echo "Checking out $b and updating"
         git checkout $b && git pull
         echo "return to branch $mainbranch"
+        git checkout $mainbranch
     done
 }
 
