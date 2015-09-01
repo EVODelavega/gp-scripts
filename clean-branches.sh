@@ -2,27 +2,28 @@
 
 scriptName=$(basename ${BASH_SOURCE[0]})
 
-function Help {
+Usage() {
     echo "usage: ${scriptName}:"
     echo "      -h           : Display this help message"
     echo "      -b [current] : choose the default branch to start from (default current)"
     echo "      -r [origin]  : Choose the remote to use (default origin). Useful when you have multiple remotes"
-    echo "      -m [full]    : Mode -> full, sync or fix (default full)"
+    echo "      -m [update]  : Mode -> update, full, sync or fix (default update)"
     echo "        MODES:"
-    echo "              full : delete all local branches, and create new remote"
-    echo "                    tracking branches. Useful to clean up old branches"
-    echo "              fix  : will attempt to set the upstream for all branches"
-    echo "                    to their remote counterparts"
-    echo "              sync : Same as full, but without deleting the existing branches"
-    echo "              quick: Just set the tracking to a different remote, quick mode will probably change names soon"
+    echo "             update: checks out each local branch, and pulls updates"
+    echo "             full  : delete all local branches, and create new remote"
+    echo "                     tracking branches. Useful to clean up old branches"
+    echo "             fix   : will attempt to set the upstream for all branches"
+    echo "                     to their remote counterparts"
+    echo "             sync  : Same as full, but without deleting the existing branches"
+    echo "             quick : Just set the tracking to a different remote, quick mode will probably change names soon"
 }
 
-function Full {
+Full() {
     echo "start from $mainbranch branch"
     git checkout $mainbranch
     echo "removing all branches, except for branch $mainbranch"
     for b in $(git branch | cut -c 3-) ; do
-        if [ ! "$b" = "$mainbranch" ] ; then
+        if [ ! "$b" == "$mainbranch" ] ; then
             git branch -D ${b};
         fi
     done
@@ -47,7 +48,17 @@ function Full {
     echo 'done'
 }
 
-function Sync {
+Update() {
+    git checkout $mainbranch
+    git pull
+    for b in $(git branch | grep -v '*' | awk '{print $1;}'); do
+        echo "Checking out $b and updating"
+        git checkout $b && git pull
+        echo "return to branch $mainbranch"
+    done
+}
+
+Sync() {
     git checkout $mainbranch
     git fetch --all
     for b in $(git ls-remote --heads $remote  | sed 's?.*refs/heads/??'); do git checkout -b ${b} && git branch --set-upstream-to="$remote/$b"; done
@@ -55,7 +66,7 @@ function Sync {
     git checkout $mainbranch
 }
 
-function FixTracking {
+FixTracking() {
     git checkout $mainbranch
     echo "fetching all remote branches from $remote"
     git fetch --all
@@ -66,7 +77,7 @@ function FixTracking {
     git checkout $mainbranch
 }
 
-function SwitchTracking {
+SwitchTracking() {
     for b in $(git branch); do
         git checkout $b
         if [ $? -eq 0 ]; then
@@ -84,7 +95,7 @@ function SwitchTracking {
 
 mainbranch=$(git branch | grep '*' | awk '{print $2}')
 remote=origin
-action='full'
+action='update'
 
 while getopts :m:r:b:h flag; do
     case $flag in
@@ -98,25 +109,25 @@ while getopts :m:r:b:h flag; do
             ;;
         m)
             action=${OPTARG,,} #convert to lower
-            if [ "$action" = "full" ] || [ "$action" = "fix" ] || [ "$action" = "sync" ] || [ "$action" = "quick" ] ; then
+            if [ "$action" == "update" ] || [ "$action" == "full" ] || [ "$action" == "fix" ] || [ "$action" == "sync" ] || [ "$action" == "quick" ] ; then
                 echo "Mode $action"
             else
-                Help
+                Usage
                 exit 1
             fi
             ;;
         h)
-            Help
+            Usage
             exit 0
             ;;
         \?)
-            Help
+            Usage
             exit 2
             ;;
     esac
 done
 if [[ $action =~ ^f ]] ; then
-    if [ "$action" = "fix" ] ; then
+    if [ "$action" == "fix" ] ; then
         FixTracking
     else
         Full
@@ -125,7 +136,11 @@ else
     if [[ $action =~ ^q ]]; then
         SwitchTracking
     else
-        Sync
+        if [[ $action =~ ^u ]]; then
+            Update
+        else
+            Sync
+        fi
     fi
 fi
 exit 0
