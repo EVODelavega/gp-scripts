@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+########################
+##  Simple lint hook  ##
+##  for PHP scripts   ##
+########################
+ERROR_COLOUR='\e[0;31m'
+MSG_COLOUR='\e[0;33m'
+END_COLOUR='\e[0m'
+
+DisplayError() {
+    echo -e "${ERROR_COLOUR}Syntax error in file $f ${END_COLOUR}"
+    echo -e "${MSG_COLOUR}Commit aborted${END_COLOUR}"
+    exit 1
+}
+
+for f in $(git status | grep .php | awk '{print $2;}'); do
+    php -l "$f" 1> /dev/null
+    [ $? -eq 0 ] || DisplayError
+done
+
+exit 0

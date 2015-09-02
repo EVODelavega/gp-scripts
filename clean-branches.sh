@@ -62,7 +62,9 @@ Update() {
 Sync() {
     git checkout "$mainbranch"
     git fetch --all
-    for b in $(git ls-remote --heads "$remote"  | sed 's?.*refs/heads/??'); do git checkout -b "$b" && git branch --set-upstream-to="$remote/$b"; done
+    for b in $(git ls-remote --heads "$remote"  | sed 's?.*refs/heads/??'); do
+        git checkout -b "$b" && git branch --set-upstream-to="$remote/$b";
+    done
     echo "switching back to $mainbranch"
     git checkout "$mainbranch"
 }
