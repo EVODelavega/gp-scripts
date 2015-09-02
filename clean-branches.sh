@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-scriptName=$(basename ${BASH_SOURCE[0]})
+scriptName=$(basename "${BASH_SOURCE[0]}")
 
 Usage() {
     echo "usage: ${scriptName}:"
@@ -20,27 +20,27 @@ Usage() {
 
 Full() {
     echo "start from $mainbranch branch"
-    git checkout $mainbranch
+    git checkout "$mainbranch"
     echo "removing all branches, except for branch $mainbranch"
     for b in $(git branch | cut -c 3-) ; do
         if [ ! "$b" == "$mainbranch" ] ; then
-            git branch -D ${b};
+            git branch -D "$b";
         fi
     done
     echo 'pull latest version'
-    git pull --all $remote
+    git pull --all "$remote"
     if [ $? -ne 0 ]; then
         git fetch --all
     fi
     echo 'creating tracking branches for all remote branches'
-    for b in $(git ls-remote --heads $remote  | sed 's?.*refs/heads/??'); do
+    for b in $(git ls-remote --heads "$remote"  | sed 's?.*refs/heads/??'); do
         # pass through detached head to avoid conflicts when switching branches
         git checkout "$remote/$b"
         # now create the branch, it should be up to date already
-        git checkout -b $b && git branch --set-upstream-to="$remote/$b"
+        git checkout -b "$b" && git branch --set-upstream-to="$remote/$b"
     done
     echo "switching back to $mainbranch"
-    git checkout $mainbranch
+    git checkout "$mainbranch"
     if [ $? -ne 0 ]; then
         echo "Failed to continue, you probably have some merging to do"
         exit 1
@@ -49,38 +49,40 @@ Full() {
 }
 
 Update() {
-    git checkout $mainbranch
+    git checkout "$mainbranch"
     git pull
     for b in $(git branch | grep -v '*' | awk '{print $1;}'); do
         echo "Checking out $b and updating"
-        git checkout $b && git pull
+        git checkout "$b" && git pull
         echo "return to branch $mainbranch"
-        git checkout $mainbranch
+        git checkout "$mainbranch"
     done
 }
 
 Sync() {
-    git checkout $mainbranch
+    git checkout "$mainbranch"
     git fetch --all
-    for b in $(git ls-remote --heads $remote  | sed 's?.*refs/heads/??'); do git checkout -b ${b} && git branch --set-upstream-to="$remote/$b"; done
+    for b in $(git ls-remote --heads "$remote"  | sed 's?.*refs/heads/??'); do git checkout -b "$b" && git branch --set-upstream-to="$remote/$b"; done
     echo "switching back to $mainbranch"
-    git checkout $mainbranch
+    git checkout "$mainbranch"
 }
 
 FixTracking() {
-    git checkout $mainbranch
+    git checkout "$mainbranch"
     echo "fetching all remote branches from $remote"
     git fetch --all
-    for b in $(git branch | cut -c 3-) ; do
-        git checkout $b && git --set-upstream-to="$remote/$b";
+    for b in $(git branch | grep -v '*' | awk '{print $1}'); do
+        git checkout "$b" && git --set-upstream-to="$remote/$b";
     done
     # for b in $(git branch | cut -c 3-) ; do git checkout $b && git --set-upstream-to=$(echo $b | sed -e 's/^/origin\//'); done
-    git checkout $mainbranch
+    git checkout "$mainbranch"
 }
 
 SwitchTracking() {
-    for b in $(git branch); do
-        git checkout $b
+    git checkout "$mainbranch"
+    git branch --set-upstream-to="$remote/$mainbranch"
+    for b in $(git branch | grep -v '*' | awk '{print $1;}'); do
+        git checkout "$b"
         if [ $? -eq 0 ]; then
             git branch --set-upstream-to="$remote/$b"
         else
@@ -90,12 +92,12 @@ SwitchTracking() {
                 exit 0
             fi
         fi
-        git checkout $b
+        git checkout "$mainbranch"
     done
 }
 
 mainbranch=$(git branch | grep '*' | awk '{print $2}')
-remote=origin
+remote='origin'
 action='update'
 
 while getopts :m:r:b:h flag; do
@@ -145,3 +147,4 @@ else
     fi
 fi
 exit 0
+
