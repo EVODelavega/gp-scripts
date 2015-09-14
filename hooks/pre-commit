@@ -13,7 +13,7 @@ DisplayError() {
     exit 1
 }
 
-for f in $(git status | grep .php | awk '{print $2;}'); do
+for f in $(git status | grep .php | awk '{print $NF;}'); do
     php -l "$f" 1> /dev/null
     [ $? -eq 0 ] || DisplayError
 done
