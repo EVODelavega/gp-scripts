@@ -7,6 +7,7 @@ import (
     "io"
     "os"
     "strings"
+    //"unsafe"
 )
 
 /**
@@ -51,6 +52,9 @@ func main() {
         buffer.WriteString("\n") //add the \n before writing to the new file:wq
         if !prefix {
             s := buffer.String()
+            //unsafe, but perhaps a quicker alternative:
+            //bb := buffer.Bytes()
+            //s := *(*string)(unsafe.Pointer(&bb))
             _, err := w.WriteString(strings.Replace(s, argv[2], argv[3], -1))
             if err != nil {
                 fmt.Fprintln(os.Stderr, "error writing file: ", err)
