@@ -48,6 +48,7 @@ func main() {
             break
         }
         buffer.Write(part)
+        buffer.WriteString("\n") //add the \n before writing to the new file:wq
         if !prefix {
             s := buffer.String()
             _, err := w.WriteString(strings.Replace(s, argv[2], argv[3], -1))
