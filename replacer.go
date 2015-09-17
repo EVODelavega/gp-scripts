@@ -7,17 +7,23 @@ import (
     "io"
     "os"
     "strings"
-    //"unsafe"
+    "unsafe"
+    "flag"
 )
 
 /**
  * Replacer: copies file whilst replacing a given string
  * Example (not compiled): go run replacer.go /path/to/big/input.txt replaced.txt password '********'
  * Reads input.txt, copies it to the PWD, replasing all occurences of "password" with ********
+ *
+ * There is an optional -unsafe flag to use byte-to-string conversion via unsafe pointers, too:
+ * ./replace -unsafe in.log out.log search replace
+ *
  */
-
 func main() {
-    argv := os.Args[1:]
+    unsafePtr := flag.Bool("unsafe", false, "use unsafe byte-to-string conversion")
+    flag.Parse()
+    argv := flag.Args()
     if len(argv) != 4 {
         fmt.Println(os.Stderr, "Expected 4 arguments")
         return
@@ -51,10 +57,14 @@ func main() {
         buffer.Write(part)
         buffer.WriteString("\n") //add the \n before writing to the new file:wq
         if !prefix {
-            s := buffer.String()
-            //unsafe, but perhaps a quicker alternative:
-            //bb := buffer.Bytes()
-            //s := *(*string)(unsafe.Pointer(&bb))
+            var s string
+            if !*unsafePtr {
+                s = buffer.String()
+            } else {
+                //unsafe, but perhaps a quicker alternative:
+                bb := buffer.Bytes()
+                s = *(*string)(unsafe.Pointer(&bb))
+            }
             _, err := w.WriteString(strings.Replace(s, argv[2], argv[3], -1))
             if err != nil {
                 fmt.Fprintln(os.Stderr, "error writing file: ", err)
