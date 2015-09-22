@@ -99,13 +99,33 @@ func (con *dbConn) compareCreateStmt(tblName string) (string, error) {
     bLen := len(baseLines)
     baseLines = baseLines[1:bLen-2]
     alter := []string{fmt.Sprintf("ALTER TABLE `%s`", tblName)}
+    hasChanges := false
     for _, sub := range baseLines {
         if !strings.Contains(targetStmt, sub) {
+            hasChanges = true
+            sub = strings.Trim(sub, " ")
+            if string(sub[0]) == "`" {
+                sub = "ADD COLUMN " + sub
+            } else if strings.Contains(sub, "PRIMAR KEY") {
+                //adding primary key, check if it's replacing one:
+                if strings.Contains(targetStmt, "PRIMARY KEY") {
+                    alter = append(alter, "DROP PRIMARY KEY,")
+                }
+                sub = "ADD " + sub
+            } else {
+                sub = "ADD " + sub
+            }
+            //foreign key constraints et all are on the todo list
             alter = append(alter, sub)
         }
     }
-    alter = append(alter, ";")
-    return strings.Join(alter, "\n"), nil
+    if hasChanges {
+        lastIdx := len(alter) -1
+        alter[lastIdx] = strings.TrimRight(alter[lastIdx], ",")
+        alter = append(alter, ";")
+        return strings.Join(alter, "\n"), nil
+    }
+    return "", nil
 }
 
 func getCreateStmt(conn *sql.DB, tblName string) (string, error) {
