@@ -85,7 +85,7 @@ if [ "$merge_master" = true ]; then
         echo "Resolve merge conflicts first"
         exit 0
     fi
-    #git push
+    git push
 fi
 
 #develop
@@ -96,7 +96,7 @@ if [ "$merge_develop" = true ]; then
         echo "Fix merge conflict first, then run git push"
         exit 0
     fi
-    #git push
+    git push
 fi
 
 if [ "$merge_branch" == "master" ]; then
