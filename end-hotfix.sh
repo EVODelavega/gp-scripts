@@ -115,8 +115,6 @@ if [ "$delete_branch" = true ]; then
     fi
 fi
 
-echo "$current_branch != $merge_branch ?"
-
 if [ "$merge_branch" != "$current_branch" ]; then
     git checkout "$current_branch"
 fi
