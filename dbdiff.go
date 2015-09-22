@@ -106,7 +106,7 @@ func (con *dbConn) compareCreateStmt(tblName string) (string, error) {
             sub = strings.Trim(sub, " ")
             if string(sub[0]) == "`" {
                 sub = "ADD COLUMN " + sub
-            } else if strings.Contains(sub, "PRIMAR KEY") {
+            } else if strings.Contains(sub, "PRIMARY KEY") {
                 //adding primary key, check if it's replacing one:
                 if strings.Contains(targetStmt, "PRIMARY KEY") {
                     alter = append(alter, "DROP PRIMARY KEY,")
