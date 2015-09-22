@@ -6,7 +6,12 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"os"
+	"strings"
 )
+
+type dbConn struct {
+    base, target *sql.DB
+}
 
 func usage() {
 	fmt.Printf("Usage of %s:\n", os.Args[0])
@@ -15,10 +20,11 @@ func usage() {
 	fmt.Println("username, password, host, base, target")
 }
 
-func getArguments() ([]string, []string) {
-	var DSNs []string
-	DSNs = make([]string, 2)
-	DSNs[0] = ""
+func getArguments() (map[string]string, []string) {
+	DSNs := map[string]string{
+	    "base": "",
+	    "target": "",
+	}
 	usagePtr := flag.Bool("usage", false, "Display help message")
 	userPtr := flag.String("username", "", "DB Username")
 	passPtr := flag.String("password", "", "DB password")
@@ -53,63 +59,89 @@ func getArguments() ([]string, []string) {
 		usage()
 		return DSNs, flag.Args()
 	}
-	DSNs[0] = fmt.Sprintf("%s:%s@%s/%s?charset=%s", *userPtr, *passPtr, *hostPtr, *db1Ptr, *charsetPtr)
-	DSNs[1] = fmt.Sprintf("%s:%s@%s/%s?charset=%s", *userPtr, *passPtr, *hostPtr, *db2Ptr, *charsetPtr)
+	DSNs["base"] = fmt.Sprintf("%s:%s@%s/%s?charset=%s", *userPtr, *passPtr, *hostPtr, *db1Ptr, *charsetPtr)
+	DSNs["target"] = fmt.Sprintf("%s:%s@%s/%s?charset=%s", *userPtr, *passPtr, *hostPtr, *db2Ptr, *charsetPtr)
 	return DSNs, flag.Args()
 }
 
-func getDbConnections(DSNs []string) ([]*sql.DB, error) {
-	dbs := make([]*sql.DB, len(DSNs))
-	for i, DSN := range DSNs {
+func (con *dbConn) getDbConnections(DSNs map[string]string) error {
+	for key, DSN := range DSNs {
 		db, err := sql.Open("mysql", DSN)
 		if err != nil {
-			for j := 0; j < i; j++ {
-				dbs[j].Close()
-			}
-			return dbs, err
+		    if key == "target" {
+		        //close connection
+		        con.base.Close()
+		    }
+			return err
 		}
-		dbs[i] = db
+		if key == "base" {
+		    con.base = db
+		} else {
+		    con.target = db
+		}
 	}
-	return dbs, nil
+	return nil
 }
 
-func getCreateStmt(conn *sql.DB, tblName string) error {
+func (con *dbConn) compareCreateStmt(tblName string) (string, error) {
+    baseStmt, err := getCreateStmt(con.base, tblName)
+    if err != nil {
+        return "", err
+    }
+    targetStmt, err := getCreateStmt(con.target, tblName)
+    if err != nil {
+        return "", err
+    }
+    if baseStmt == targetStmt {
+        return "", nil
+    }
+    baseLines := strings.Split(baseStmt, "\n")
+    bLen := len(baseLines)
+    baseLines = baseLines[1:bLen-2]
+    alter := []string{fmt.Sprintf("ALTER TABLE `%s`", tblName)}
+    for _, sub := range baseLines {
+        if !strings.Contains(targetStmt, sub) {
+            alter = append(alter, sub)
+        }
+    }
+    alter = append(alter, ";")
+    return strings.Join(alter, "\n"), nil
+}
+
+func getCreateStmt(conn *sql.DB, tblName string) (string, error) {
     q := fmt.Sprintf("SHOW CREATE TABLE %s", tblName)
     res, err := conn.Query(q)
     if err != nil {
-        return err
+        return "", err
     }
     defer res.Close()
     res.Next()
     var table, create string;
     err = res.Scan(&table, &create)
     if err != nil {
-        return err
+        return "", err
     }
-    fmt.Println(create)
-    return nil
+    return create, nil
 }
 
 func main() {
 	DSNs, _ := getArguments()
-	if DSNs[0] == "" {
+	if DSNs["base"] == "" {
 		return
 	}
-	dbs, err := getDbConnections(DSNs)
+	var conn dbConn;
+	err := conn.getDbConnections(DSNs)
 	if err != nil {
 		panic(err)
 	}
-	for i := 0; i < len(dbs); i++ {
-		defer dbs[i].Close()
-	}
-	db := dbs[0]
-	target := dbs[1]
-	rows, err := db.Query("SHOW TABLES;")
+	defer conn.base.Close()
+	defer conn.target.Close()
+	rows, err := conn.base.Query("SHOW TABLES;")
 	defer rows.Close()
 	if err != nil {
 		panic(err)
 	}
-	hasStmt, err := target.Prepare("SELECT COUNT(TABLE_NAME) FROM information_schema.TABLES WHERE TABLE_NAME = ? AND TABLE_SCHEMA=database();")
+	hasStmt, err := conn.target.Prepare("SELECT COUNT(TABLE_NAME) FROM information_schema.TABLES WHERE TABLE_NAME = ? AND TABLE_SCHEMA=database();")
 	defer hasStmt.Close()
 	if err != nil {
 		panic(err)
@@ -133,12 +165,18 @@ func main() {
 		exists.Close()
 		if cnt > 0 {
 			fmt.Fprintln(os.Stdout,"-- ", tblName, " exists")
-		} else {
-			fmt.Fprintln(os.Stdout, "-- ", tblName, " does not exist")
-			err = getCreateStmt(db, tblName)
+			create, err := conn.compareCreateStmt(tblName)
 			if err != nil {
 			    panic(err)
 			}
+			fmt.Println(create)
+		} else {
+			fmt.Fprintln(os.Stdout, "-- ", tblName, " does not exist")
+			create, err := getCreateStmt(conn.base, tblName)
+			if err != nil {
+			    panic(err)
+			}
+			fmt.Println(create)
 		}
 	}
 }
