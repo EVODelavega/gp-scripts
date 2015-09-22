@@ -41,21 +41,21 @@ while getopts mdhc: o ; do
      case $o in
          m)
               merge_master=true
-              [[ $(git branch | grep master) ]] || merge_master=false
+              [[ $(git branch | grep -q master) ]] || merge_master=false
               if [ "$merge_master" = false ]; then
                   echo "no master branch found"
               fi
               ;;
          d)
               merge_develop=true
-              [[ $(git branch | grep develop) ]] || merge_develop=false
+              [[ $(git branch | grep -q develop) ]] || merge_develop=false
               if [ "$merge_develop" = false ]; then
                   echo "no develop branch found"
               fi
               ;;
          c)
               merge_branch=$OPTARG
-              [[ $(git branch | grep "$merge_branch") ]] || MergeBranchError
+              [[ $(git branch | grep -q "$merge_branch") ]] || MergeBranchError
               ;;
          k)
              delete_branch=false
