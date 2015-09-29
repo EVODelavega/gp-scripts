@@ -9,13 +9,16 @@ END_COLOUR='\e[0m'
 
 DisplayError() {
     echo -e "${ERROR_COLOUR}Syntax error in file $f ${END_COLOUR}"
-    echo -e "${MSG_COLOUR}Commit aborted${END_COLOUR}"
-    exit 1
+    exit_code=1
 }
-
+exit_code=0
 for f in $(git status | grep .php | awk '{print $NF;}'); do
     php -l "$f" 1> /dev/null
     [ $? -eq 0 ] || DisplayError
 done
 
-exit 0
+if [ $exit_code -ne 0 ]; then
+    echo -e "${MSG_COLOUR}Commit aborted${END_COLOUR}"
+fi
+
+exit $exit_code
