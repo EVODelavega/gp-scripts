@@ -6,19 +6,35 @@
 ERROR_COLOUR='\e[0;31m'
 MSG_COLOUR='\e[0;33m'
 END_COLOUR='\e[0m'
+tmpfile='/tmp/lint_'
+
+#create a tmp file to redirect lint output to
+for cc in $(git reflog | awk '{print $1;}'); do
+    tmpfile="$tmpfile""$cc"
+    if [ -e "$tmpfile" ]; then
+        # clear file first
+        echo -n "" > "$tmpfile"
+    fi
+    break
+done
 
 DisplayError() {
     echo -e "${ERROR_COLOUR}Syntax error in file $f ${END_COLOUR}"
     exit_code=1
 }
+
 exit_code=0
 for f in $(git status | grep .php | awk '{print $NF;}'); do
-    php -l "$f" 1> /dev/null
+    php -l "$f" &>> "$tmpfile"
     [ $? -eq 0 ] || DisplayError
 done
 
 if [ $exit_code -ne 0 ]; then
-    echo -e "${MSG_COLOUR}Commit aborted${END_COLOUR}"
+    echo -e "${MSG_COLOUR}Lint-checks failed: Commit aborted${END_COLOUR}"
+    echo "Lint output in $tmpfile"
+else
+    echo -e "${MSG_COLOUR}Lint-checks passed${END_COLOUR}"
+    rm -f "$tmpfile"
 fi
 
 exit $exit_code
