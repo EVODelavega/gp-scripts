@@ -37,7 +37,7 @@ if  $allow_rebase ; then
         checkLocalBranchRebase
     fi
     # 3. Rebase is allowed in this case
-    echo "Rewriting $current_branch applying changes to head of $rebase_branch"
+    echo "Rewriting $current_branch applying changes in $rebase_branch, then re-applying changes in $current_branch"
     exit 0
 fi
 
