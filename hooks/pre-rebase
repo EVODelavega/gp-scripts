@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 
+# Set to true to allow rebasing branches
 allow_rebase=false
+# If rebase is allowed, set to false to allow public branches (branches that exist on remote) to be rebased
 local_only=true
+# The branch to rebase on
 rebase_branch="$1"
 
+# quick way to work out what branch we're rebasing, if not specified
 getCurrentBranch() {
     current_branch=$(git branch | grep '*' | awk '{print $2;}')
 }
 
+# check if the branch we're rebasing exists on remote
 checkLocalBranchRebase() {
     git ls-remote | grep "refs/head/$current_branch" &> /dev/null
     if [ $? -eq 0 ]; then
@@ -17,18 +22,25 @@ checkLocalBranchRebase() {
     echo "$current_branch is a local branch, rebase allowed"
 }
 
+# pre-rebase is called with 1 or 2 arguments
 if [ $# -eq 2 ]; then
     current_branch="$2"
 else
     current_branch=getCurrentBranch
 fi
 
-if [ $allow_rebase ]; then
-    if [ $local_only ]; then
+# Check rebase policy, check if rebase is allowed depending on policy
+# 1. Is git rebase allowed?
+if  $allow_rebase ; then
+    # 2. If it is, can public branches be rebased?
+    if $local_only ; then
         checkLocalBranchRebase
     fi
+    # 3. Rebase is allowed in this case
     echo "Rewriting $current_branch applying changes to head of $rebase_branch"
     exit 0
 fi
+
+# Rebase policy is to NOT rebase branches
 echo "Rebasing branch $current_branch is not allowed"
 exit 1
