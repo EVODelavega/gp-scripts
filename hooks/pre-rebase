@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+allow_rebase=false
+local_only=true
+rebase_branch="$1"
+
+getCurrentBranch() {
+    current_branch=$(git branch | grep '*' | awk '{print $2;}')
+}
+
+checkLocalBranchRebase() {
+    git ls-remote | grep "refs/head/$current_branch" &> /dev/null
+    if [ $? -eq 0 ]; then
+        echo "$current_branch is a public branch, rebasing public branches is not allowed"
+        exit 1
+    fi
+    echo "$current_branch is a local branch, rebase allowed"
+}
+
+if [ $# -eq 2 ]; then
+    current_branch="$2"
+else
+    current_branch=getCurrentBranch
+fi
+
+if [ $allow_rebase ]; then
+    if [ $local_only ]; then
+        checkLocalBranchRebase
+    fi
+    echo "Rewriting $current_branch applying changes to head of $rebase_branch"
+    exit 0
+fi
+echo "Rebasing branch $current_branch is not allowed"
+exit 1
