@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 
-# Set to true to allow rebasing branches
+## Rebasing branches is useful, from time to time. However, if you don't know when and why you use git rebase
+## rebasing tends to be more of a bad -and sometimes time consuming- nasty habbit.
+## The purpose of this git-hook is to enforce a specific rebase policy (either no-rebase or no-public-rebase)
+
+# Set to true to allow rebasing branches, if you want users to be allowed to rebase branches
 allow_rebase=false
+
 # If rebase is allowed, set to false to allow public branches (branches that exist on remote) to be rebased
+# The safest option here is NOT to allow users to rebase public branches
 local_only=true
+
 # The branch to rebase on
 rebase_branch="$1"
 
@@ -14,7 +21,7 @@ getCurrentBranch() {
 
 # check if the branch we're rebasing exists on remote
 checkLocalBranchRebase() {
-    git ls-remote | grep "refs/head/$current_branch" &> /dev/null
+    git ls-remote | grep "refs/heads/$current_branch" &> /dev/null
     if [ $? -eq 0 ]; then
         echo "$current_branch is a public branch, rebasing public branches is not allowed"
         exit 1
