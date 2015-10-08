@@ -17,6 +17,11 @@ usage () {
     echo "     -i          : Interactive. Prompt for each commit, prompt to continue/exit at critical points"
     echo "     -p          : Automatically push updated release branch at the end"
     echo "     -h/?        : Display this help message"
+    echo
+    echo "Example: ./$SCRIPT -v 10 -t FOO-1234 -i"
+    echo "             (interactively cherry-pick FOO-1234 related commits from master into support/release-10 branch)"
+    echo "         ./$SCRIPT -v 10 -t BAR-1234 -f -p"
+    echo "             (cherry-pick BAR-1234 related tickets into release-10 branch from develop, then push release-10 branch)"
 }
 
 list_commits () {
