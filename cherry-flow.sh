@@ -43,13 +43,13 @@ cherry_pick () {
 }
 
 if [ $# -gt 0 ]; then
-    while getopts :v:tfpih flag ; do
+    while getopts :v:t:fpih flag ; do
         case $flag in
             v)
                 VERSION="support/release-$OPTARG"
                 ;;
             t)
-                TICKET=$OPTARG
+                TICKET="$OPTARG"
                 ;;
             i)
                 INTERACTIVE=true
@@ -75,7 +75,8 @@ if [ $# -gt 0 ]; then
                 ;;
         esac
     done
-    echo $TICKET
+
+    echo "cherry-picking commits for $TICKET onto $VERSION branch"
     # version + OPTARG, TICKET + OPTARG == 4 minimum!
     if [ $# -lt 4 ] || [ "$TICKET" = false ] || [ "$VERSION" = false ]; then
         echo "$SCRIPT requires at least 2 params: version and ticket"
@@ -86,21 +87,29 @@ if [ $# -gt 0 ]; then
     git checkout $VERSION
     git pull
     git cherry -v HEAD $SRCBRANCH | grep "$TICKET"
+    # list commits included in the pick
     if [ "$INTERACTIVE" = true ]; then
         read -p 'Continue cherry-picking these commits? [Y/n]: ' -n 1 -r
-        [[ $REPLY =~ ^[nN]$ ]] || echo 'exit' && exit 0
+        if [[ $REPLY =~ ^[nN]$ ]]; then
+            echo "exit"
+            exit 0
+        fi
         echo ''
     fi
+    # list branches containing the commits
     list_commits
     if [ "$INTERACTIVE" = true ]; then
         read -p 'Continue cherry-picking? [Y/n]: ' -n 1 -r
-        [[ $REPLY =~ ^[nN]$ ]] || echo 'Exit' && exit 0
+        if [[ $REPLY =~ ^[nN]$ ]]; then
+            echo "Exit"
+            exit 0
+        fi
         echo ''
     fi
     cherry_pick
     if [ "$PUSH" = false ] && [ "$INTERACTIVE" = true ]; then
-        read -p 'Push changes? [y/N]: ' -n 1 -r
-        [[ $REPLY =~ ^[yY]$ ]] || PUSH=true
+        read -p 'Push changes? [Y/n]: ' -n 1 -r
+        [[ $REPLY =~ ^[nN]$ ]] || PUSH=true
         echo ''
     fi
     if [ "$PUSH" = true ]; then
