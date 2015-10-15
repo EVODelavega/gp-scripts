@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-current_branch=$(git branch | grep '*' | awk '{print $NF;}')
-
 [[ $# -gt 0 ]] || exit 1
 
 delete_branch="$1"
