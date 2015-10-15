@@ -24,7 +24,7 @@ DisplayError() {
 }
 
 exit_code=0
-for f in $(git status | grep .php | awk '{print $NF;}'); do
+for f in $(git status | grep \.php$ | awk '{print $NF;}'); do
     php -l "$f" &>> "$tmpfile"
     [ $? -eq 0 ] || DisplayError
 done
