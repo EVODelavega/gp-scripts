@@ -1,5 +1,4 @@
-var r = function(n)
-{
+var r = function(n) {
     console.log(n);
     if (n <= 1)
         return 1;
