@@ -109,9 +109,44 @@ if [ $# -gt 0 ]; then
         usage
         exit 1
     fi
-    git checkout $SRCBRANCH && git pull
+    # Check if current branch has unstaged changes -> checkout, quit or stash (default -> stash)
+    if [[ $(git status --porcelain | grep -P '^ M') ]]; then
+        echo "Detected unstaged changes on current branch"
+        if [ "$INTERACTIVE" = true ]; then
+            read -p 'Stash changes, checkout changes or quit? [S/c/q]: ' -n 1 -r
+            if [[ $REPLY =~ ^[qQ]$ ]]; then
+                echo "Exit"
+                exit 0
+            fi
+            if [[ $REPLY =~ ^[cC]$ ]]; then
+                echo ''
+                for f in $(git status --porcelain | grep -P '^ M' | awk '{print $NF;}'); do
+                    echo "Checking out $f"
+                    git checkout "$f"
+                done
+            else
+                echo 'Stashing work'
+                git stash
+            fi
+        else
+            echo 'Stashing work'
+            git stash
+        fi
+    fi
+    # check for staged changes: quit or commit (default -> commit)
+    if [[ $(git status --porcelain | grep -P '^M') ]]; then
+        echo 'Detected staged changes on current branch'
+        if [ "$INTERACTIVE" = true ]; then
+            read -p "Create commit and continue? [Y/n]: " -n 1 -r
+            check_continue_reply
+        fi
+        echo "Creating temporary commit"
+        git commit -m "Committing staged changes before cherry-picking $TICKET onto $VERSION branch"
+    fi
+    # using git pull --ff here, in case merge.ff = false in gitconfig
+    git checkout $SRCBRANCH && git pull --ff
     git checkout $VERSION
-    git pull
+    git pull --ff
     git cherry -v HEAD $SRCBRANCH | grep -P $grep_pattern
     # list commits included in the pick
     if [ "$INTERACTIVE" = true ]; then
