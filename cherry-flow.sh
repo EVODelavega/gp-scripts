@@ -7,11 +7,13 @@ HOTFIX=true
 SRCBRANCH='master'
 PUSH=false
 
+version_base="support/release-"
+
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 
 usage () {
     echo "Usage $SCRIPT [-fpih] -v version -t ticket"
-    echo "     -v <version>: The target version (support/release-<version>)"
+    echo "     -v <version>: The target version ($version_base<version>)"
     echo "     -t <ticket> : The ticket to cherry-pick (eg PROJ-123)"
     echo "     -f          : Feature, use develop as source branch instead of master"
     echo "     -i          : Interactive. Prompt for each commit, prompt to continue/exit at critical points"
@@ -25,14 +27,14 @@ usage () {
 }
 
 list_commits () {
-    for c in $(git cherry -v HEAD $SRCBRANCH | grep "$TICKET" | awk '{print $2;}'); do
+    for c in $(git cherry -v HEAD $SRCBRANCH | grep -P '^\+\s+[0-9a-f]{40}\s+'"$TICKET" | awk '{print $2;}'); do
         echo "Commit $c found in branches: "
         git branch --contains $c
     done
 }
 
 cherry_pick () {
-    for c in $(git cherry -v HEAD $SRCBRANCH | grep "$TICKET" | awk '{print $2;}'); do
+    for c in $(git cherry -v HEAD $SRCBRANCH | grep -P '^\+\s+[0-9a-f]{40}\s+'"$TICKET" | awk '{print $2;}'); do
         if [ "$INTERACTIVE" = true ]; then
             read -p "Cherry-pick commit ${c}? [Y/n]: " -n 1 -r
             if [[ $REPLY =~ ^[nN]$ ]]; then
@@ -51,7 +53,7 @@ if [ $# -gt 0 ]; then
     while getopts :v:t:fpih flag ; do
         case $flag in
             v)
-                VERSION="support/release-$OPTARG"
+                VERSION="${version_base}${OPTARG}"
                 ;;
             t)
                 TICKET="$OPTARG"
