@@ -8,6 +8,7 @@ SRCBRANCH='master'
 PUSH=false
 
 version_base="support/release-"
+grep_pattern=""
 
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 
@@ -27,16 +28,21 @@ usage () {
 }
 
 list_commits () {
-    for c in $(git cherry -v HEAD $SRCBRANCH | grep -P '^\+\s+[0-9a-f]{40}\s+'"$TICKET" | awk '{print $2;}'); do
+    for c in $(git cherry -v HEAD $SRCBRANCH | grep -P $grep_pattern | awk '{print $2;}'); do
         echo "Commit $c found in branches: "
         git branch --contains $c
     done
 }
 
 cherry_pick () {
-    for c in $(git cherry -v HEAD $SRCBRANCH | grep -P '^\+\s+[0-9a-f]{40}\s+'"$TICKET" | awk '{print $2;}'); do
+    for c in $(git cherry -v HEAD $SRCBRANCH | grep -P $grep_pattern | awk '{print $2;}'); do
         if [ "$INTERACTIVE" = true ]; then
-            read -p "Cherry-pick commit ${c}? [Y/n]: " -n 1 -r
+            read -p "Cherry-pick commit ${c}? [Y/n/s (show)]: " -n 1 -r
+            if [[ $REPLY =~ ^[sS]$ ]]; then
+                echo "Showing commit $c"
+                git show "$c"
+                read -p "Cherry-pick commit ${c}? [Y/n]: " -n 1 -r
+            fi
             if [[ $REPLY =~ ^[nN]$ ]]; then
                 echo "Skipping..."
             else
@@ -47,6 +53,18 @@ cherry_pick () {
             git cherry-pick -x $c
         fi
     done
+}
+
+get_ticket_pattern () {
+    echo '^\+\s+[0-9a-f]{40}\s+'"$TICKET"
+}
+
+check_continue_reply () {
+    if [[ $REPLY =~ ^[nN]$ ]]; then
+        echo "Exit"
+        exit 0
+    fi
+    echo ''
 }
 
 if [ $# -gt 0 ]; then
@@ -83,6 +101,7 @@ if [ $# -gt 0 ]; then
         esac
     done
 
+    grep_pattern=$(get_ticket_pattern)
     echo "cherry-picking commits for $TICKET onto $VERSION branch"
     # version + OPTARG, TICKET + OPTARG == 4 minimum!
     if [ $# -lt 4 ] || [ "$TICKET" = false ] || [ "$VERSION" = false ]; then
@@ -93,25 +112,29 @@ if [ $# -gt 0 ]; then
     git checkout $SRCBRANCH && git pull
     git checkout $VERSION
     git pull
-    git cherry -v HEAD $SRCBRANCH | grep "$TICKET"
+    git cherry -v HEAD $SRCBRANCH | grep -P $grep_pattern
     # list commits included in the pick
     if [ "$INTERACTIVE" = true ]; then
         read -p 'Continue cherry-picking these commits? [Y/n]: ' -n 1 -r
-        if [[ $REPLY =~ ^[nN]$ ]]; then
-            echo "exit"
-            exit 0
+        check_continue_reply
+        read -p 'Show branches containing these commits? [Y/n]: ' -n 1 -r
+        resp=${REPLY:-y}
+        if [[ $resp =~ ^[yY]$ ]]; then
+            list_commits
+            # We should actually prompt to continue here
+            # ATM, we're prompting even if user skipped --contains stuff
+        else
+            echo '' #new line after read
         fi
-        echo ''
+    else
+        # non-interactive: always list branches
+        list_commits
     fi
-    # list branches containing the commits
-    list_commits
+    # Prompt anyway (cf list_commits above) - keep it here, call it an "extra safety feature"
+    # mainly laziness, but just in case user has a sticky enter key -> ask twice
     if [ "$INTERACTIVE" = true ]; then
         read -p 'Continue cherry-picking? [Y/n]: ' -n 1 -r
-        if [[ $REPLY =~ ^[nN]$ ]]; then
-            echo "Exit"
-            exit 0
-        fi
-        echo ''
+        check_continue_reply
     fi
     cherry_pick
     if [ "$PUSH" = false ] && [ "$INTERACTIVE" = true ]; then
@@ -122,6 +145,7 @@ if [ $# -gt 0 ]; then
     if [ "$PUSH" = true ]; then
         git push
     fi
+    echo "Done"
 else
     usage
     exit 1
