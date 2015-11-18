@@ -10,7 +10,7 @@ PUSH=false
 version_base="support/release-"
 grep_pattern=""
 
-SCRIPT=$(basename ${BASH_SOURCE[0]})
+SCRIPT=$(basename "${BASH_SOURCE[0]}")
 
 usage () {
     echo "Usage $SCRIPT [-fpih] -v version -t ticket"
@@ -28,14 +28,14 @@ usage () {
 }
 
 list_commits () {
-    for c in $(git cherry -v HEAD $SRCBRANCH | grep -P $grep_pattern | awk '{print $2;}'); do
+    for c in $(git cherry -v HEAD $SRCBRANCH | grep -P "$grep_pattern" | awk '{print $2;}'); do
         echo "Commit $c found in branches: "
-        git branch --contains $c
+        git branch --contains "$c"
     done
 }
 
 cherry_pick () {
-    for c in $(git cherry -v HEAD $SRCBRANCH | grep -P $grep_pattern | awk '{print $2;}'); do
+    for c in $(git cherry -v HEAD "$SRCBRANCH" | grep -P "$grep_pattern" | awk '{print $2;}'); do
         if [ "$INTERACTIVE" = true ]; then
             read -p "Cherry-pick commit ${c}? [Y/n/s (show)]: " -n 1 -r
             if [[ $REPLY =~ ^[sS]$ ]]; then
@@ -47,10 +47,10 @@ cherry_pick () {
                 echo "Skipping..."
             else
                 echo ''
-                git cherry-pick -x $c
+                git cherry-pick -x "$c"
             fi
         else
-            git cherry-pick -x $c
+            git cherry-pick -x "$c"
         fi
     done
 }
@@ -144,10 +144,10 @@ if [ $# -gt 0 ]; then
         git commit -m "Committing staged changes before cherry-picking $TICKET onto $VERSION branch"
     fi
     # using git pull --ff here, in case merge.ff = false in gitconfig
-    git checkout $SRCBRANCH && git pull --ff
-    git checkout $VERSION
+    git checkout "$SRCBRANCH" && git pull --ff
+    git checkout "$VERSION"
     git pull --ff
-    git cherry -v HEAD $SRCBRANCH | grep -P $grep_pattern
+    git cherry -v HEAD "$SRCBRANCH" | grep -P "$grep_pattern"
     # list commits included in the pick
     if [ "$INTERACTIVE" = true ]; then
         read -p 'Continue cherry-picking these commits? [Y/n]: ' -n 1 -r
