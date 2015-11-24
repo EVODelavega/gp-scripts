@@ -1,9 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 static
-int r( int n )
+long r( long n )
 {
-    printf("%d\n", n);
+    printf("%ld\n", n);
     if (n <= 1)
         return n;
     if (n%2)
@@ -11,9 +12,12 @@ int r( int n )
     return r(n/2);
 }
 
-int main ( void )
+int main (int argc, char **argv)
 {
+    long n = 15;
+    if (argc > 1)
+        n = strtol(argv[1], NULL, 10);
     puts("Basic collatz fun - recursive C function");
-    r(15);
+    r(n);
     return 0;
 }
