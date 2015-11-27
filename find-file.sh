@@ -66,5 +66,5 @@ for c in $(git rev-list "$rev_list"); do
     if [ $? -eq 0 ]; then
         echo "Saw $file in $c"
     fi
-    # [[ $(git ls-tree --name-only -r "$c" | grep -q "$file") ]] && echo "Saw $file in $r"
+    #$(git ls-tree --name-only -r "$c" | grep -q "$file") && echo "Saw $file in $r"
 done
