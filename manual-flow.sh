@@ -24,7 +24,7 @@ Usage() {
     echo '  -p             : Automatically push changes'
     echo '  -k             : Keep merged branch'
     echo '  -h             : Display this help message'
-    exit $1
+    exit "$1"
 }
 
 ## Get merge type
@@ -90,7 +90,7 @@ do_merge() {
     if [ "$push" = true ]; then
         git push "$remote" "$to_branch"
     fi
-    echo "Updated $to_branch on remote $origin"
+    echo "Updated $to_branch on remote $remote"
 }
 
 # Check if git merge did not result in conflicts
