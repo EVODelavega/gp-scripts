@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
 ###########################################################################
+####                                                                   ####
 #### For people being forced to use git-flow, but don't really want to ####
 ####    This script checks branch names, and merges them accordingly   ####
 ####       Branches with "feature/" prefix are merged into develop     ####
 ####        Hotfix branches are merged into master, then develop       ####
+####                                                                   ####
 ###########################################################################
 
 script_name=$(basename "${BASH_SOURCE[0]}")
