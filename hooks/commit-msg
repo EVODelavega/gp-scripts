@@ -7,7 +7,7 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 current_branch=$(git branch | grep '*' | awk '{print $2}')
-if [[ "$current_branch" =~ ^[[:alpha:]]+/([[:alpha:]]{4}-[[:digit:]]+) ]]; then
+if [[ "$current_branch" =~ ^[[:alpha:]]+/([[:alpha:]]{3,4}-[[:digit:]]+) ]]; then
     ticket="${BASH_REMATCH[1]}"
     [[ $(cat "$1" | grep -q "$ticket") ]] || echo -n "$ticket: " $(cat "$1") > "$1"
 fi
