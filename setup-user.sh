@@ -70,14 +70,27 @@ fi
 if [ -z KillProc ]; then
     echo "Adding KillProc"
     echo 'KillProc() {
-    if [ $# -ne 1 ]; then
+    if [ $# -lt 1 ]; then
         echo "No prog name provided"
     else
-        kill -9 $(ps -A | grep "$1" | awk '"'"'{print $1;}'"'"')
-        echo "$1 Killed"
+        if [ $# -lt 2 ]; then
+            count=$(ps -A | grep -c "$1")
+        else
+            $count="$2"
+        fi
+        kill_count="$count"
+        for pid in $(ps -A | grep "$1" | awk '"'"'{print $1;}'"'"'); do
+            kill -9 "$pid"
+            (( count-- ))
+            if [ $count -le 0 ]; then
+                break
+            fi
+        done
+        (( kill_count -= count ))
+        echo "$kill_count processes matching '"'"'$1'"'"' killed"
     fi
 }
-export KillProc' >> $rc_file
+export -f KillProc' >> $rc_file
 fi
 
 echo 'Done'
