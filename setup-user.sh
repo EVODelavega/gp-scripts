@@ -6,13 +6,52 @@
 
 
 rc_file="${HOME}/.bashrc"
-
+load_custom=false
+script_name=$(basename "${BASH_SOURCE[0]}")
 # IMPORTANT:
 #
 # this will load the bashrc file, only if the interactive-check is removed, though
 # alternatively, replace hashbang with output of "which bash" (probably /bin/bash)
 # and use #!/bin/bash -i instead
 . ~/.bashrc
+
+Usage() {
+    echo "Usage $script_name [-b rc_file [ -l]][-h] Setup user environment"
+    echo
+    echo "     -b rc_file: The RC file to write to. Defaults to ${HOME}/.bashrc"
+    echo "     -l        : Load RC file (if you specified one)"
+    echo "     -h        : Display this help message"
+    exit "$1"
+}
+
+if [ $# -ge 1 ]; then
+    while getopts :rlh flag; do
+        case $flag in
+            r)
+                if [ -f "$OPTARG" ]; then
+                    rc_file="$OPTARG"
+                else
+                    echo "$OPTARG is not a file using default $rc_file"
+                fi
+                ;;
+            l)
+                load_custom=true
+                ;;
+            h)
+                Usage 0
+                ;;
+            *)
+                echo "Unknown option $OPTARG"
+                Usage 1
+                ;;
+        esac
+    done
+fi
+
+# load custom file
+if [ "$load_custom" = true ]; then
+    . "$rc_file"
+fi
 
 ## check gopath env var, create directory if not exists
 if [ -z "$GOPATH" ]; then
