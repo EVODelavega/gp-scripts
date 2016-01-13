@@ -20,9 +20,9 @@ func (v *N) step() *N {
 func (v *N) r() int {
 	fmt.Println(int(*v))
 	if int(*v) > 1 {
-		v.step().r()
+		return v.step().r()
 	}
-	return 1
+	return int(*v)
 }
 
 func main() {
