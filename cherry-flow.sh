@@ -35,6 +35,7 @@ list_commits () {
 }
 
 cherry_pick () {
+    local commit_string=""
     for c in $(git cherry -v HEAD "$SRCBRANCH" | grep -P "$grep_pattern" | awk '{print $2;}'); do
         if [ "$INTERACTIVE" = true ]; then
             read -p "Cherry-pick commit ${c}? [Y/n/s (show)]: " -n 1 -r
@@ -47,12 +48,24 @@ cherry_pick () {
                 echo "Skipping..."
             else
                 echo ''
-                git cherry-pick -x "$c"
+                # concatenate commits into single string, so we can call git cherry-pick once
+                # passing all selected commits, use POSIX concatenation
+                # instead of bash-style commit_string+="${c} "
+                commit_string="${commit_string}${c} "
+                # git cherry-pick -x "$c"
             fi
         else
-            git cherry-pick -x "$c"
+            commit_string="${commit_string}${c} "
+            #git cherry-pick -x "$c"
         fi
     done
+    if [ -n "$commit_string" ]; then
+        # No commits, exit here to prevent possible pointless push
+        echo "No commits to cherry-pick, Done (exit with error)"
+        exit 1
+    else
+        git cherry-pick -x "$commit_string"
+    fi
 }
 
 get_ticket_pattern () {
