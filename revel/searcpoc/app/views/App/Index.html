@@ -1,0 +1,59 @@
+{{set . "title" "Home"}}
+{{template "header.html" .}}
+
+<header class="hero-unit" style="background-color:#A9F16C">
+  <div class="container">
+    <div class="row">
+      <div class="hero-text">
+        <h1>It works!</h1>
+        <p>{{ .foo }}</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+    <div class="row">
+        <div class="span4">
+            <input type="text" id="search" name="search">
+        </div>
+    </div>
+    <div class="row" id="results">
+    </div>
+  <div class="row">
+    <div class="span6">
+      {{template "flash.html" .}}
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+    (function(g, d, _undef) {
+        var dummyXhr = {abort: function(){}};
+        d.querySelector('#search').addEventListener('change', (function(results, xhr) {
+            var cb = function() {
+                if (this.readyState === 4) {
+                    xhr = _undef;
+                    if (this.status === 200) {
+                        results.innerHTML = this.responseText;
+                    } else {
+                        results.innerHTML = 'Status ' + this.status + '<br>' + this.responseText;
+                    }
+                }
+            };
+            return function(e) {
+                (xhr || dummyXhr).abort();
+                if (!this.value) {
+                    results.innerHTML = '';
+                    return e;
+                }
+                xhr = new XMLHttpRequest();
+                xhr.open('POST', '/search', true);
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                xhr.setRequestHeader('Content-type', 'application/json');
+                xhr.onreadystatechange = cb;
+                xhr.send(JSON.stringify({q: this.value}));
+            }
+        }(d.querySelector('#results'), _undef)), false);
+     }(window, document));
+</script>
+{{template "footer.html" .}}
