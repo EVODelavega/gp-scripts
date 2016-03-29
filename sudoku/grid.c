@@ -90,7 +90,7 @@ s_field *init_field(s_block *block, int field_offset)
 static
 s_block *init_block(int offset)
 {
-    int i, x, y;
+    int i;
     s_block *block = malloc(sizeof *block);
     if (block == NULL)
         return NULL;
@@ -224,7 +224,7 @@ void print_line(s_line *line)
     {
         printf(
             "| %c | %c | %c |",
-            (char) line->fields[i]->val == 0 ? ' ' : line->fields[i]->val + '0',
+            line->fields[i]->val == 0 ? ' ' : line->fields[i]->val + '0',
             line->fields[i+1]->val == 0 ? ' ' : line->fields[i+1]->val + '0',
             line->fields[i+2]->val == 0 ? ' ' : line->fields[i + 2]->val + '0'
         );
@@ -234,7 +234,7 @@ void print_line(s_line *line)
 static
 void print_grid(s_grid *grid)
 {
-    int i, j;
+    int i;
     for (i=0;i<9;i+=3)
     {
         puts("|---|---|---||---|---|---||---|---|---|");
