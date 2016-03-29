@@ -248,12 +248,44 @@ void print_grid(s_grid *grid)
     puts("|---|---|---||---|---|---||---|---|---|");
 }
 
-int main (void)
+static
+void init_from_file(const char *fname, s_grid *grid)
+{
+    FILE *fh = fopen(fname, "r");
+    if (fh == NULL)
+    {
+        fprintf(stderr, "Failed to open file '%s'\n", fname);
+        return;
+    }
+    int i = 0;
+    while (i<81) {
+        int ch = fgetc(fh);
+        if (ch == EOF)
+            break;
+        if (ferror(fh))
+        {
+            fprintf(stderr, "Error reading from file");
+            break;
+        }
+        grid->fields_s[i]->val = ch - '0';//convert to int
+        if (feof(fh))
+            break;
+        ++i;
+    }
+    fclose(fh);
+}
+
+int main (int argc, char **argv)
 {
     s_grid *grid = init_grid();
     if (grid == NULL)
         return EXIT_FAILURE;
     //use grid
+    if (argc > 1)
+    {
+        puts("Try to read from file");
+        init_from_file(argv[1], grid);
+    }
     print_grid(grid);
     dealloc_grid(grid);
     return EXIT_SUCCESS;
