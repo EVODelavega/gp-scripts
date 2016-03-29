@@ -25,6 +25,9 @@ usage () {
     echo "             (interactively cherry-pick FOO-1234 related commits from master into support/release-10 branch)"
     echo "         ./$SCRIPT -v 10 -t BAR-1234 -f -p"
     echo "             (cherry-pick BAR-1234 related tickets into release-10 branch from develop, then push release-10 branch)"
+    if [ $# -gt 0 ]; then
+        exit $1
+    fi
 }
 
 list_commits () {
@@ -80,6 +83,7 @@ check_continue_reply () {
     echo ''
 }
 
+# @todo $# -eq 0 => usage 1 fi (no else)
 if [ $# -gt 0 ]; then
     while getopts :v:t:fpih flag ; do
         case $flag in
@@ -100,16 +104,13 @@ if [ $# -gt 0 ]; then
                 PUSH=true
                 ;;
             h)
-                usage
-                exit 0
+                usage 0
                 ;;
             \?)
-                usage
-                exit 0
+                usage 0
                 ;;
             *)
-                usage
-                exit 1
+                usage 1
                 ;;
         esac
     done
@@ -119,8 +120,7 @@ if [ $# -gt 0 ]; then
     # version + OPTARG, TICKET + OPTARG == 4 minimum!
     if [ $# -lt 4 ] || [ "$TICKET" = false ] || [ "$VERSION" = false ]; then
         echo "$SCRIPT requires at least 2 params: version and ticket"
-        usage
-        exit 1
+        usage 1
     fi
     # Check if current branch has unstaged changes -> checkout, quit or stash (default -> stash)
     if [[ $(git status --porcelain | grep -P '^ M') ]]; then
@@ -195,7 +195,6 @@ if [ $# -gt 0 ]; then
     fi
     echo "Done"
 else
-    usage
-    exit 1
+    usage 1
 fi
 exit 0
