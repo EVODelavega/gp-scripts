@@ -223,10 +223,10 @@ void print_line(s_line *line)
     for (i=0;i<9;i+=3)
     {
         printf(
-            "| %d | %d | %d |",
-            line->fields[i]->val,
-            line->fields[i+1]->val,
-            line->fields[i+2]->val
+            "| %c | %c | %c |",
+            (char) line->fields[i]->val == 0 ? ' ' : line->fields[i]->val + '0',
+            line->fields[i+1]->val == 0 ? ' ' : line->fields[i+1]->val + '0',
+            line->fields[i+2]->val == 0 ? ' ' : line->fields[i + 2]->val + '0'
         );
     }
 }
