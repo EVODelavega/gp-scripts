@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+//#include <stdbool.h>
 
 typedef enum {
     LINE_HORIZONTAL,
@@ -63,6 +64,8 @@ typedef struct _s_grid {
         s_field *fields_2d[9][9];
     };
     s_line *lines[2][9];
+    int state_changed;
+    int initialized;
     int solved;
 } s_grid;
 
@@ -170,7 +173,7 @@ s_grid *init_grid(void)
     for (i=0;i<9;++i)
         grid->valid_count[i] = 9;
 
-    grid->solved = 0;
+    grid->initialized = grid->state_changed = grid->solved = 0;
     //add lines:
     for (i=0;i<9;++i)
     {
@@ -226,7 +229,7 @@ void print_line(s_line *line)
             "| %c | %c | %c |",
             line->fields[i]->val == 0 ? ' ' : line->fields[i]->val + '0',
             line->fields[i+1]->val == 0 ? ' ' : line->fields[i+1]->val + '0',
-            line->fields[i+2]->val == 0 ? ' ' : line->fields[i + 2]->val + '0'
+            line->fields[i+2]->val == 0 ? ' ' : line->fields[i+2]->val + '0'
         );
     }
 }
@@ -249,6 +252,46 @@ void print_grid(s_grid *grid)
 }
 
 static
+void update_block_valids(s_block *block, int taken)
+{
+    int i;
+    for (i=0;i<9;++i)
+        block->fields[i]->valid[taken-1] = 0;
+    block->valid[taken-1] = 0;
+}
+
+static
+void update_line_valids(s_line *line, int taken)
+{
+    int i;
+    for (i=0;i<9;++i)
+        line->fields[i]->valid[taken-1] = 0;
+    line->valid[taken-1] = 0;
+}
+
+//set field value, but check to make sure the value is allowed!
+static
+int set_field_value(s_field *field, int value)
+{
+    if (
+        field->valid[value-1] == 0
+        ||
+        field->block->valid[value-1] == 0
+        ||
+        field->lines[0]->valid[value-1] == 0
+        ||
+        field->lines[1]->valid[value-1] == 0
+    ) {
+        return 1;
+    }
+    update_block_valids(field->block, value);
+    field->val = value;
+    update_line_valids(field->lines[0], value);
+    update_line_valids(field->lines[1], value);
+    return 0;
+}
+
+static
 void init_from_file(const char *fname, s_grid *grid)
 {
     FILE *fh = fopen(fname, "r");
@@ -267,12 +310,89 @@ void init_from_file(const char *fname, s_grid *grid)
             fprintf(stderr, "Error reading from file");
             break;
         }
-        grid->fields_s[i]->val = ch - '0';//convert to int
+        ch -= '0';
+        //make sure this is a valid integer value
+        if (ch < 0 || ch > 9) {
+            fprintf(
+                stderr,
+                "Invalid value '%c' (converted to %d)",
+                ch + '0',
+                ch
+            );
+            continue;//keep reading, take whitespace and \n characters into account?
+        }
+        if (ch != 0)
+        {
+            if (set_field_value(grid->fields_s[i], ch))
+            {
+                fprintf(stderr, "Invalid input -> value %d is duplicate", ch);
+                fclose(fh);
+                exit(1);
+            }
+            --grid->valid_count[ch-1];
+        }
+        else
+            grid->fields_s[i]->val = 0;
         if (feof(fh))
             break;
         ++i;
     }
     fclose(fh);
+    grid->initialized = 1;
+}
+
+static
+int check_field(s_field *field)
+{
+    if (field->val != 0)
+        return 0;//make sure we're not checking for no good reason
+    int i, found = 0, last = 0;
+    for (i=0;i<9;++i)
+    {
+        if (field->valid[i])
+        {
+            if (++found > 1)
+                return 0;
+            last = i+1;
+        }
+    }
+    if (found == 1)
+        set_field_value(field, last);
+    else last = 0;
+    return last;//will used to set solved flag...
+}
+
+static
+void update_solved(s_grid *grid)
+{
+    int k;
+    for (k=0;k<9;++k)
+        if (grid->valid_count[k])
+            return;
+    grid->solved = 1;//we can only ever reach this point if valid_count is 0 throughout
+}
+
+static
+void solve_loop(s_grid *grid, int retries)
+{
+    int i, set;
+    puts("Start solving puzzle");
+    do {
+        grid->state_changed = 0;
+        for (i=0;i<81;++i)
+        {
+            set = check_field(grid->fields_s[i]);
+            if (set != 0)
+            {
+                grid->state_changed = 1;
+                --grid->valid_count[set-1];
+            }
+        }
+        if (grid->state_changed)
+            update_solved(grid);
+    } while(grid->state_changed == 1 && grid->solved == 0);
+    if (--retries > 0)
+        return solve_loop(grid, retries);
 }
 
 int main (int argc, char **argv)
@@ -287,6 +407,12 @@ int main (int argc, char **argv)
         init_from_file(argv[1], grid);
     }
     print_grid(grid);
+    if (grid->initialized)
+    {
+        solve_loop(grid, 1);
+        puts("Puzzle after processing");
+        print_grid(grid);
+    }
     dealloc_grid(grid);
     return EXIT_SUCCESS;
 }
