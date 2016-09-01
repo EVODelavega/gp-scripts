@@ -77,8 +77,7 @@ if [ ! -f $idxfile ]; then
 else
     read -p "create $idxfile file? [y/N]: " -n 1 -r
 fi
-if [[ $REPLY =~ ^[yY]$ ]]
-then
+if [[ $REPLY =~ ^[yY]$ ]] ; then
     echo "Creating $idxfile on branch $currentbranch"
     git gc
     packfile=$(ls .git/objects/pack/*.idx)
@@ -95,8 +94,7 @@ for objectref in $(tac packidx.log | grep blob | cut -d " " -f1); do
     fi
     filename=$(git rev-list --objects --all | grep $objectref | sed -n -e "s/^$objectref //p")
     read -p "process all commits modifying $filename? [y/N] " -n 1 -r
-    if [[ $REPLY =~ ^[Yy]$ ]]
-    then
+    if [[ $REPLY =~ ^[Yy]$ ]] ; then
         if [ "$verbose" = true ] ; then
             echo "get all commits modifying $filename"
             git log --oneline --branches -- "$filename"
@@ -138,17 +136,14 @@ for objectref in $(tac packidx.log | grep blob | cut -d " " -f1); do
         fi
     fi
     read -p 'continue? [Y/n]: ' -n 1 -r
-    if [[ $REPLY =~ ^[nN]$ ]]
-    then
-        break
-    fi
+    [[ $REPLY =~ ^[nN]$ ]] && break
 done
-echo '' #insert blank line
+echo #insert blank line
 read -p "remove $idxfile? [y/N]: " -n 1 -r
 if [[ $REPLY =~ ^[yY]$ ]]; then
     rm $idxfile
 fi
-echo '' #new line
+echo #new line
 
 
 exit 0

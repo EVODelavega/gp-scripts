@@ -160,7 +160,7 @@ if [ $# -gt 0 ]; then
     git checkout "$SRCBRANCH" && git pull --ff
     git checkout "$VERSION"
     git pull --ff
-    git cherry -v HEAD "$SRCBRANCH" | grep -P "$grep_pattern"
+    git cherry -v HEAD "$SRCBRANCH" | grep -P $grep_pattern
     # list commits included in the pick
     if [ "$INTERACTIVE" = true ]; then
         read -p 'Continue cherry-picking these commits? [Y/n]: ' -n 1 -r

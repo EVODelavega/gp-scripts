@@ -42,7 +42,7 @@ trait EvilTrait
      * Abstracts are useful to ensure certain methods exist, and have a particular signature
      */
     abstract protected function someAbstractMethod();
- 
+
     /**
      * Be careful with method names like this, if the using class has the same name, it might turn into
      * an old-school constructor... remember: PHP4-style constructors emit E_DEPRECATED notices
@@ -118,7 +118,7 @@ class Foobar
         //insteadof DOES overwrite the method entirely, unlike aliasing
         DevilsOwnTrait::someTraitSpecificMethod insteadof EvilTrait;
     }
- 
+
     /**
      * Abstract declares this method as protected, so only protected and public
      * should be allowed, this is private and breaks the LSP, I'd expect a fatal error
@@ -127,7 +127,7 @@ class Foobar
     {
         return 'This should not be allowed';
     }
- 
+
     /**
      * We've implemented an abstract method in an illegal fashion
      * Let's check if we can call this contract-breaking implementation:
@@ -136,7 +136,7 @@ class Foobar
     {
         return $this->someAbstractMethod();
     }
- 
+
     /**
      * Note: using as <alias> merely creates an alternative name that accesses the same method
      * doesn't mean the original method-name is forgotten, $this->iSeeYou(); is public, but $this->getSomeString(); still works
@@ -172,5 +172,5 @@ echo PHP_EOL . 'Aliases do not rename methods: ' . PHP_EOL . $x->demonstrateAlia
 echo PHP_EOL . 'Worst of all: insteadof mess: passing an array works' . PHP_EOL;
 var_dump($x->someTraitSpecificMethod(range(1, 10)));
 echo PHP_EOL . 'Calling the "other" definition of the method, even indirectly via the defining trait method does not work' . PHP_EOL
-             . 'The first trait method is completely overridden by the second trait. In short: you can break a trait!' . PHP_EOL;
+    . 'The first trait method is completely overridden by the second trait. In short: you can break a trait!' . PHP_EOL;
 $x->testInsteadOf();

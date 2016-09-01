@@ -363,6 +363,43 @@ int check_field(s_field *field)
 }
 
 static
+void check_line(s_line *line)
+{
+	int i;
+	size_t option_fields = 0;
+	for (i=0;i<9;++i)
+		if (line->fields[i]->val == 0) ++option_fields;
+	for (int i=0;i<9;++i)
+	{
+		//if we still need this value, and the value can only be set in a specific field
+		//in a specific block, remove all other possible values from said field
+		/**
+		 * >| 1 |<
+		 * | 1, 3 | <-- only place where 1 can go in row, remove "3" option
+		 * >| 5 |<
+		 * =========
+		 * | 3, 6 |
+		 * | 6, 8 |
+		 * >| 4 |<
+		 * =========
+		 */
+		if (line->valid[i])
+		{
+		}
+	}
+}
+
+static
+void check_lines(s_grid *grid, line_type type)
+{
+	for (int i=0;i<9;++i)
+	{
+		//
+	}
+}
+
+
+static
 void update_solved(s_grid *grid)
 {
     int k;
