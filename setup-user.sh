@@ -7,6 +7,7 @@
 
 rc_file="${HOME}/.bashrc"
 load_custom=false
+create_config=false
 script_name=$(basename "${BASH_SOURCE[0]}")
 # IMPORTANT:
 #
@@ -16,16 +17,17 @@ script_name=$(basename "${BASH_SOURCE[0]}")
 . ~/.bashrc
 
 Usage() {
-    echo "Usage $script_name [-b rc_file [ -l]][-h] Setup user environment"
+    echo "Usage $script_name [-b rc_file [ -l]][-c][-h] Setup user environment"
     echo
     echo "     -b rc_file: The RC file to write to. Defaults to ${HOME}/.bashrc"
     echo "     -l        : Load RC file (if you specified one)"
     echo "     -h        : Display this help message"
+    echo "     -c        : create config files (vimrc + tmux)"
     exit "$1"
 }
 
 if [ $# -ge 1 ]; then
-    while getopts :rlh flag; do
+    while getopts :rlch flag; do
         case $flag in
             r)
                 if [ -f "$OPTARG" ]; then
@@ -37,6 +39,9 @@ if [ $# -ge 1 ]; then
             l)
                 load_custom=true
                 ;;
+            c)
+                create_config=true
+                ;;
             h)
                 Usage 0
                 ;;
@@ -47,6 +52,8 @@ if [ $# -ge 1 ]; then
         esac
     done
 fi
+
+$create_config && cp conf/.vimrc ~/ && cp conf/.tmux.conf ~/
 
 # load custom file
 if [ "$load_custom" = true ]; then
