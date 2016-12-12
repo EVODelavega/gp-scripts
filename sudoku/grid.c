@@ -31,7 +31,6 @@ typedef struct _s_line {
 } s_line;
 
 /**
- 
  struct foo {
   union {
     int sequential[9];
