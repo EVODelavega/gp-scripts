@@ -160,10 +160,6 @@ while getopts hkard flag; do
             ;;
         d)
             # kill detached sessions
-            for ds in $(tmux ls | grep -v '(attached)' | awk '{print $1;}'); do
-                tmux kill-session -t "${ds%?}" || echo "Error closing session ${ds%?}"
-            done
-            exit 0
             action="d"
             ;;
         r)
