@@ -5,9 +5,10 @@
      ## simple tmux shortcut script (work in progres) ##
      ##      Currently only handles simple tasks      ##
      ##                                               ##
-     ##       * Creating/attaching sessions           ##
+     ##       * Attaching/creating sessions           ##
      ##       * Killing detatched sessions            ##
      ##       * Interactively kill sessions           ##
+     ##       * Create named session quickly          ##
      ##                                               ##
      ## Next features to be supported:                ##
      ##       * Scripted sessions (new sessions)      ##
@@ -19,13 +20,16 @@ tmux_states=()
 last=0
 
 Usage() {
-    echo "${0##*/} [-kardh]: makes life easier WRT managing tmux sessions"
+    echo "${0##*/} [-kardh] [-n [name]]: makes life easier WRT managing tmux sessions"
     echo
     echo "     -k: Kill sessions interactively"
     echo "     -a: Attach existing session, or create new session and attach [DEFAULT ACTION]"
     echo "     -r: Rename an existing session"
     echo "     -d: Kill detached sessions"
+    echo "     -n: Create new session with given name"
     echo "     -h: Display this help message"
+    echo
+    echo "  name : Pass name in conjunction with -n flag to create named session"
 }
 
 check_chosen() {
@@ -64,7 +68,6 @@ break_choice() {
 
 display_choices() {
     local idx
-    local choices
     for idx in "${!tmux_states[@]}"; do
         echo "$idx -> ${tmux_states[idx]}"
     done
@@ -89,15 +92,19 @@ choose_session() {
 
 create_session() {
     read -p "Session name (default empty): " -r
-    [[ -z "${REPLY// }" ]] && tmux || tmux new -s "${REPLY}"
+    if [[ -z "${REPLY// }" ]]; then
+        tmux
+        exit
+    fi
+    tmux new -s "${REPLY}"
     exit
 }
 
 rename_session() {
     local new_name
     read -p "New name for session: " -r new_name
-    [[ -z "${new_name// }" ]] && exit_error "${new_name} is not a valid name" 2 || \
-        tmux rename-session -t "${1}" "${new_name}"
+    [[ -z "${new_name// }" ]] && exit_error "${new_name} is not a valid name" 2
+    tmux rename-session -t "${1}" "${new_name}"
     exit
 }
 
@@ -126,6 +133,7 @@ kill_interactive() {
         fi
         [[ "${ans}" =~ ^[qQ]$ ]] && echo "Quit" && exit 0
         [[ "${ans}" =~ ^[yY]$ ]] && tmux kill-session -t "${tmux_sessions[idx]}"
+        echo
     done
 }
 
@@ -147,8 +155,9 @@ exit_error() {
 
 
 action="a"
+name="" # optional argument
 
-while getopts hkard flag; do
+while getopts hkardn flag; do
     case $flag in
         k)
             # interactively kill tmux session
@@ -166,6 +175,10 @@ while getopts hkard flag; do
             # Rename existing session
             action="r"
             ;;
+        n)
+            # Create new named session (pseudo alias of tm -a)
+            action="n"
+            ;;
         h)
             Usage
             exit 0
@@ -182,17 +195,26 @@ case "${action}" in
     a)
         choose_session
         [[ "${chosen}" == "${last}" ]] && create_session
-        tmux a -t "${tmux_session[chosen]}"
+        tmux a -t "${tmux_sessions[chosen]}"
         ;;
     d)
         kill_detached
         ;;
     r)
         choose_session
-        rename_session "${tmux_session[chosen]}"
+        rename_session "${tmux_sessions[chosen]}"
         ;;
     k)
         kill_interactive
         ;;
+    n)
+        shift $((OPTIND - 1))
+        [[ "$#" -ge 1 ]] && name="${1// }"
+        if [[ -z "${name}" ]]; then
+            tmux
+            exit
+        fi
+        tmux new -s "${name}"
+        exit
 esac
 
