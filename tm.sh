@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+# shellcheck disable=SC2016
      ###################################################
      ##                                               ##
      ## simple tmux shortcut script (work in progres) ##
@@ -9,24 +9,28 @@
      ##       * Killing detatched sessions            ##
      ##       * Interactively kill sessions           ##
      ##       * Create named session quickly          ##
+     ##       * Basic scripted sessions (startup)     ##
      ##                                               ##
      ## Next features to be supported:                ##
-     ##       * Scripted sessions (new sessions)      ##
+     ##       * Scripted sessions (continuation)      ##
      ##                                               ##
      ###################################################
 
 tmux_sessions=()
 tmux_states=()
 last=0
+script_dir="${HOME}/.tm"
 
 Usage() {
-    echo "${0##*/} [-kardh] [-n [name]]: makes life easier WRT managing tmux sessions"
+    echo "${0##*/} [-kardhi] [-n [name]] [-s start-script]: makes life easier WRT managing tmux sessions"
     echo
     echo "     -k: Kill sessions interactively"
     echo "     -a: Attach existing session, or create new session and attach [DEFAULT ACTION]"
     echo "     -r: Rename an existing session"
     echo "     -d: Kill detached sessions"
     echo "     -n: Create new session with given name"
+    echo "     -s: Name of session-start script (located in ${script_dir}, session name available as \$TM_SESSION"
+    echo "     -i: Install, create script dir and adds an example script"
     echo "     -h: Display this help message"
     echo
     echo "  name : Pass name in conjunction with -n flag to create named session"
@@ -79,7 +83,7 @@ choose_session() {
     chosen="${REPLY:-$last}"
 
     # quit
-    [[ $REPLY =~ [qQ] ]] && exit
+    [[ $REPLY =~ ^[qQ]$ ]] && exit
 
     if [ "${chosen}" -gt "$last" ]; then
         echo "Invalid input"
@@ -91,9 +95,17 @@ choose_session() {
 }
 
 create_session() {
+    local name
     read -p "Session name (default empty): " -r
-    if [[ -z "${REPLY// }" ]]; then
+    name="${REPLY// }"
+    if [[ -z "${name}" ]]; then
         tmux
+        exit
+    fi
+    if [ ! -z "${start_script}" ]; then
+        tmux new -s "${name}" -d
+        TM_SESSION="${name}" . "${start_script}"
+        tmux a -t "${name}"
         exit
     fi
     tmux new -s "${REPLY}"
@@ -153,11 +165,27 @@ exit_error() {
     exit "${2}"
 }
 
+do_install() {
+    local default_script
+    default_script="${script_dir}/default"
+    [ ! -d "${script_dir}" ] && mkdir "${script_dir}"
+    if [ ! -f "${default_script}" ]; then
+        echo "#!/usr/bin/env bash" > "${default_script}"
+        {
+            echo ;
+            echo '## Example of send-keys, split-window, and resize-pane';
+            echo 'tmux send-keys -t "${TM_SESSION}" '"'pwd'"' C-m';
+            echo 'tmux split-window -t "${TM_SESSION}" -h';
+            echo 'tmux resize-pane -t "${TM_SESSION}" -R 30';
+        } >> "${default_script}"
+    fi
+}
 
 action="a"
 name="" # optional argument
+start_script=""
 
-while getopts hkardn flag; do
+while getopts hikardns: flag; do
     case $flag in
         k)
             # interactively kill tmux session
@@ -178,6 +206,14 @@ while getopts hkardn flag; do
         n)
             # Create new named session (pseudo alias of tm -a)
             action="n"
+            ;;
+        s)
+            start_script="${script_dir}/${OPTARG}"
+            [ ! -f "${start_script}" ] && Usage && exit_error "Script ${OPTARG} not found in ${start_script}" 3
+            ;;
+        i)
+            do_install
+            exit
             ;;
         h)
             Usage
@@ -214,7 +250,13 @@ case "${action}" in
             tmux
             exit
         fi
-        tmux new -s "${name}"
+        if [ ! -z "${start_script}" ]; then
+            tmux new -s "${name}" -d
+            TM_SESSION="${name}" . "${start_script}"
+            tmux a -t "${name}"
+            exit
+        fi
+         tmux new -s "${name}"
         exit
 esac
 
