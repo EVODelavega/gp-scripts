@@ -223,7 +223,7 @@ while getopts hikardns: flag; do
 done
 
 # check whether or not sessions are active, and handle action if possible
-no_sessions
+[ "${action}" == "n" ] || no_sessions
 
 get_sessions
 
