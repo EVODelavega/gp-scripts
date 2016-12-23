@@ -22,18 +22,20 @@ last=0
 script_dir="${HOME}/.tm"
 
 Usage() {
-    echo "${0##*/} [-kardhi] [-n [name]] [-s start-script]: makes life easier WRT managing tmux sessions"
-    echo
-    echo "     -k: Kill sessions interactively"
-    echo "     -a: Attach existing session, or create new session and attach [DEFAULT ACTION]"
-    echo "     -r: Rename an existing session"
-    echo "     -d: Kill detached sessions"
-    echo "     -n: Create new session with given name"
-    echo "     -s: Name of session-start script (located in ${script_dir}, session name available as \$TM_SESSION"
-    echo "     -i: Install, create script dir and adds an example script"
-    echo "     -h: Display this help message"
-    echo
-    echo "  name : Pass name in conjunction with -n flag to create named session"
+    cat << _EOF__
+${0##*/} [-kardhi] [-n [name]] [-s start-script]: makes life easier WRT managing tmux sessions
+
+     -k: Kill sessions interactively
+     -a: Attach existing session, or create new session and attach [DEFAULT ACTION]
+     -r: Rename an existing session
+     -d: Kill detached sessions
+     -n: Create new session with given name
+     -s: Name of session-start script (located in ${script_dir}, session name available as \$TM_SESSION
+     -i: Install, create script dir and adds an example script
+     -h: Display this help message
+
+  name : Pass name in conjunction with -n flag to create named session
+_EOF__
 }
 
 check_chosen() {
