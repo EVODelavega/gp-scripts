@@ -99,11 +99,12 @@ choose_session() {
 
 create_session() {
     local name
-    read -p "Session name (default empty): " -r
+    local pdir
+    read -p "Session name (default current directory): " -r
+    pdir=$(pwd)
     name="${REPLY// }"
     if [[ -z "${name}" ]]; then
-        tmux
-        exit
+        name="${pdir##*/}"
     fi
     if [ ! -z "${start_script}" ]; then
         tmux new -s "${name}" -d
@@ -111,7 +112,7 @@ create_session() {
         tmux a -t "${name}"
         exit
     fi
-    tmux new -s "${REPLY}"
+    tmux new -s "${name}"
     exit
 }
 
