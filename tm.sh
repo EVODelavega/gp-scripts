@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2016
 ## Older versions of shellcheck, use: shellcheck -e SC2016 tm.sh
 ###################################################
 ##                                               ##
