@@ -204,7 +204,7 @@ update_script() {
                 ;;
             d|D)
                 echo "diff: "
-                diff "${1}" "${target_script}"
+                diff "${1}" "${target_script}" | more
                 update_script "${1}"
                 return
                 ;;
