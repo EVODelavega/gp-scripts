@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016
 ## Older versions of shellcheck, use: shellcheck -e SC2016 tm.sh
-     ###################################################
-     ##                                               ##
-     ## simple tmux shortcut script (work in progres) ##
-     ##      Currently only handles simple tasks      ##
-     ##                                               ##
-     ##       * Attaching/creating sessions           ##
-     ##       * Killing detatched sessions            ##
-     ##       * Interactively kill sessions           ##
-     ##       * Create named session quickly          ##
-     ##       * Basic scripted sessions (startup)     ##
-     ##                                               ##
-     ## Next features to be supported:                ##
-     ##       * Scripted sessions (continuation)      ##
-     ##                                               ##
-     ###################################################
+###################################################
+##                                               ##
+## simple tmux shortcut script (work in progres) ##
+##      Currently only handles simple tasks      ##
+##                                               ##
+##       * Attaching/creating sessions           ##
+##       * Killing detatched sessions            ##
+##       * Interactively kill sessions           ##
+##       * Create named session quickly          ##
+##       * Basic scripted sessions (startup)     ##
+##                                               ##
+## Next features to be supported:                ##
+##       * Scripted sessions (continuation)      ##
+##                                               ##
+###################################################
 
 tmux_sessions=()
 tmux_states=()
@@ -23,16 +23,18 @@ last=0
 script_dir="${HOME}/.tm"
 
 Usage() {
-    cat << _EOF__
-${0##*/} [-kardhi] [-n [name]] [-s start-script]: makes life easier WRT managing tmux sessions
+    cat <<-_EOF__
+${0##*/} [-kardhib] [-u script file] [-n [name]] [-s start-script]: makes life easier WRT managing tmux sessions
 
      -k: Kill sessions interactively
      -a: Attach existing session, or create new session and attach [DEFAULT ACTION]
+     -u: copy/update a script in .tm directory
      -r: Rename an existing session
      -d: Kill detached sessions
      -n: Create new session with given name
      -s: Name of session-start script (located in ${script_dir}, session name available as \$TM_SESSION
      -i: Install, create script dir and adds an example script
+     -b: start session in detached state [currently only used when specifying startup script]
      -h: Display this help message
 
   name : Pass name in conjunction with -n flag to create named session
@@ -109,7 +111,7 @@ create_session() {
     if [ ! -z "${start_script}" ]; then
         tmux new -s "${name}" -d
         TM_SESSION="${name}" . "${start_script}"
-        tmux a -t "${name}"
+        $attach && tmux a -t "${name}"
         exit
     fi
     tmux new -s "${name}"
@@ -173,23 +175,66 @@ do_install() {
     local default_script
     default_script="${script_dir}/default"
     [ ! -d "${script_dir}" ] && mkdir "${script_dir}"
-    if [ ! -f "${default_script}" ]; then
-        echo "#!/usr/bin/env bash" > "${default_script}"
-        {
-            echo ;
-            echo '## Example of send-keys, split-window, and resize-pane';
-            echo 'tmux send-keys -t "${TM_SESSION}" '"'pwd'"' C-m';
-            echo 'tmux split-window -t "${TM_SESSION}" -h';
-            echo 'tmux resize-pane -t "${TM_SESSION}" -R 30';
-        } >> "${default_script}"
+    [ -f "${default_script}" ] && exit_error "script ${default_script} already exists" 5
+    echo "#!/usr/bin/env bash" > "${default_script}"
+    {
+        cat << _EOD__
+
+## example of send-keys, split-windown, and resize-pane
+tmux send-keys -t "\${TM_SESSION}" 'pwd' C-m
+tmux split-window -t "\${TM_SESSION}" -h
+tmux resize-pane -t "\${TM_SESSION}" -R 30
+_EOD__
+    } >> "${default_script}"
+}
+
+update_script() {
+    local script_name
+    local target_script
+    script_name="${1##*/}"
+    target_script="${script_dir}/${script_name%.*}"
+    if [ -f "${target_script}" ]; then
+        read -p "Replace existing ${script_name%.*} script? [Y/n/d(iff)/r(ename)/q(uit)]: " -r -n 1 resp
+        echo
+        case $resp in
+            y|Y)
+                echo "Replacing script"
+                ;;
+            n|N)
+                return
+                ;;
+            d|D)
+                echo "diff: "
+                diff "${1}" "${target_script}"
+                update_script "${1}"
+                return
+                ;;
+            r|R)
+                while [ -f "${target_script}" ]; do
+                    read -p "Enter new name: " -r name
+                    target_script="${script_dir}/${name}"
+                    [ -f "${target_script}" ] && echo "Script ${name} already exists"
+                done
+                ;;
+            q|Q)
+                return
+                ;;
+            *)
+                echo "Unkown option ${resp}"
+                update_script "${1}"
+                ;;
+        esac
     fi
+    cp "${1}" "${target_script}"
+    chmod +x "${target_script}"
 }
 
 action="a"
 name="" # optional argument
 start_script=""
+attach=true
 
-while getopts hikardns: flag; do
+while getopts hiu:kardnbs: flag; do
     case $flag in
         k)
             # interactively kill tmux session
@@ -198,6 +243,10 @@ while getopts hikardns: flag; do
         a)
             # default -> attach session (new or existing)
             action="a"
+            ;;
+        u)
+            update_script "${OPTARG}"
+            exit
             ;;
         d)
             # kill detached sessions
@@ -218,6 +267,9 @@ while getopts hikardns: flag; do
         i)
             do_install
             exit
+            ;;
+        b)
+            attach=false
             ;;
         h)
             Usage
@@ -251,13 +303,13 @@ case "${action}" in
         shift $((OPTIND - 1))
         [[ "$#" -ge 1 ]] && name="${1// }"
         if [[ -z "${name}" ]]; then
-            tmux
-            exit
+            name=$(pwd)
+            name="${name##*/}"
         fi
         if [ ! -z "${start_script}" ]; then
             tmux new -s "${name}" -d
             TM_SESSION="${name}" . "${start_script}"
-            tmux a -t "${name}"
+            $attach && tmux a -t "${name}"
             exit
         fi
          tmux new -s "${name}"
