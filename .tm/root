@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+## Example of send-keys, split-window, and resize-pane
+tmux send-keys -t "${TM_SESSION}" 'sudo su' C-m

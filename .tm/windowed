@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+tmux split-window -t "${TM_SESSION}" -h
+tmux select-pane -t "${TM_SESSION}"
+tmux split-window -t "${TM_SESSION}" -v
+tmux new-window -t "${TM_SESSION}"
+{
+    tmux send-keys -t "${TM_SESSION}:2" 'vim ~/.tmux.conf' C-m
+    tmux select-window -t "${TM_SESSION}:1"
+}

@@ -20,8 +20,6 @@
 ##  Make script executable (chmod +x)           ##
 ##  Run lsrb -h in any git repo                 ##
 ##                                              ##
-##  NOTE: -h flag will not work ouside git repo ##
-##                                              ##
 ##################################################
 
 colour_red='\033[1;31m'

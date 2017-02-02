@@ -171,6 +171,19 @@ exit_error() {
 }
 
 do_install() {
+    if [ ! -d "${HOME}/bin" ]; then
+        echo "Creating bin dir in home directory"
+        mkdir "${HOME}/bin"
+        echo "Add this to your profile file: export PATH=\"\${HOME}/bin:\$PATH\""
+    fi
+    # Copy script as tm into ~/bin/
+    cp "${0}" "${HOME}/bin/tm"
+    # Add any scripts we find under $(pwd)/.tm/
+    if [ -d ".tm" ]; then
+        for s in $(ls .tm/); do
+            cp ".tm/${s}" "${script_dir}"
+        done
+    fi
     local default_script
     default_script="${script_dir}/default"
     [ ! -d "${script_dir}" ] && mkdir "${script_dir}"
