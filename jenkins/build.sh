@@ -64,7 +64,7 @@ iter_yaml_list() {
     ## The file sha1 hashes are extracted (awk {print $2;}) and written to the hash_file
     printf "" > "${hash_file}"
     # shellcheck disable=SC2013,SC2103
-    for p in $(sed -n "/^${item}/,/^\$/p" "${fname}" | grep '-' | awk '{print $NF;}' | sort); do
+    for p in $(sed -n "/^${item}/,/^\$/p" "${fname}" | grep -E ' +-' | awk '{print $NF;}' | sort); do
         # shellcheck disable=SC2103
         cd repo
         git ls-files -s "${p}" | awk '{print $2;}' >> "../${hash_file}"
